@@ -7,8 +7,12 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 
-class IMUCollector(val context: Context) {
+class IMUCollector(private val context: Context) {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -16,31 +20,59 @@ class IMUCollector(val context: Context) {
     private var rotVSensor: Sensor? = null
     private var accVSensor: Sensor? = null
     private var gyroVSensor: Sensor? = null
-    val data = Array(6){
+    val data = Array(6) {
         FloatArray(200)
     }
-    fun start(){
+
+    fun start() {
         initSensor()
         isRunning = true
+        thread(start = true) {
+            var index = 0
+            while (isRunning) {
+                if (index == 200) {
+                    forward()
+                    index = 0
+                }
+                fillData(index++)
+                Thread.sleep(5)
+            }
+        }
     }
-    fun stop(){
+
+    private fun fillData(index: Int) {
+        data[0][index] = acc[0]
+        data[1][index] = acc[1]
+        data[2][index] = acc[2]
+        data[3][index] = gyro[0]
+        data[4][index] = gyro[1]
+        data[5][index] = gyro[2]
+    }
+
+
+    fun stop() {
         isRunning = false
         stopSensor()
     }
-    val lowpassFilters = Array<IMULowPassFilter>(6){
+
+    private val filters = Array(6) {
         IMULowPassFilter(FilterConstant.para)
     }
-    fun setProcessListener(forward:(FloatArray)->Unit){
-        //1st get IMU data
-        //2nd low-pass filter
-        //lowpass filter need parameters from mathlab
-        val tempoData = FloatArray(1200)
-        for (i in 0 until 6) {
-            val t = lowpassFilters[i].filter(data[i])
-            t.copyInto(tempoData,i*200)
+    lateinit var modulePartial: (FloatArray) -> Unit
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private fun forward() {
+        //low-pass filter need parameters from MatLab
+        val tData = data.copyOf()
+        coroutineScope.launch{
+            val tempoData = FloatArray(1200)
+            tData.forEachIndexed { index, floatArray ->
+                filters[index].filter(floatArray).copyInto(tempoData,index*200)
+            }
+            modulePartial(tempoData)
         }
-        //3rd using the forward method
-        forward(tempoData)
+    }
+    fun setProcessListener(forward: (FloatArray) -> Unit) {
+        modulePartial = forward
     }
 
     var isRunning = false
@@ -81,6 +113,7 @@ class IMUCollector(val context: Context) {
             Log.d("imu", "acc accuracy changed")
         }
     }
+
     private fun initSensor() {
         sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         rotVSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
@@ -90,6 +123,7 @@ class IMUCollector(val context: Context) {
         sensorManager.registerListener(accl, accVSensor, SensorManager.SENSOR_DELAY_FASTEST)
         sensorManager.registerListener(gyrol, gyroVSensor, SensorManager.SENSOR_DELAY_FASTEST)
     }
+
     private fun stopSensor() {
         sensorManager.unregisterListener(accl)
         sensorManager.unregisterListener(gyrol)
