@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
 
-class IMUCollector(private val context: Context) {
+class IMUCollector(private val context: Context, private val modulePartial:(FloatArray)->Unit) {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -58,7 +58,7 @@ class IMUCollector(private val context: Context) {
     private val filters = Array(6) {
         IMULowPassFilter(FilterConstant.para)
     }
-    lateinit var modulePartial: (FloatArray) -> Unit
+
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private fun forward() {
         //low-pass filter need parameters from MatLab
@@ -70,9 +70,6 @@ class IMUCollector(private val context: Context) {
             }
             modulePartial(tempoData)
         }
-    }
-    fun setProcessListener(forward: (FloatArray) -> Unit) {
-        modulePartial = forward
     }
 
     var isRunning = false

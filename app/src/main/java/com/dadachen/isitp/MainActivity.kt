@@ -20,17 +20,14 @@ class MainActivity : AppCompatActivity() {
         //7th, remember, it should be always fully tested with both unit and integrated.
         //transfer post-processed IMU data to tensors
         //
-
-    }
-    lateinit var collector:IMUCollector
-    fun startRecord(){
-        collector = IMUCollector(this)
         val module = Module.load(modulePath)
-        collector.setProcessListener {
-            //transfer array to tensor
+        collector = IMUCollector(this){
             val tensor = Tensor.fromBlob(it, longArrayOf(200,6))
             val res = module.forward(IValue.from(tensor)).toTensor()
         }
+    }
+    private lateinit var collector:IMUCollector
+    fun startRecord(){
         collector.start()
     }
     fun stopRecord(){
