@@ -20,8 +20,8 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
     private var rotVSensor: Sensor? = null
     private var accVSensor: Sensor? = null
     private var gyroVSensor: Sensor? = null
-    val data = Array(6) {
-        FloatArray(200)
+    private val data = Array(6) {
+        FloatArray(FRAME_SIZE)
     }
 
     fun start() {
@@ -30,12 +30,12 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
         thread(start = true) {
             var index = 0
             while (isRunning) {
-                if (index == 200) {
+                if (index == FRAME_SIZE) {
                     forward()
                     index = 0
                 }
                 fillData(index++)
-                Thread.sleep(5)
+                Thread.sleep(FREQ_INTERVAL)
             }
         }
     }
@@ -64,9 +64,9 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
         //low-pass filter need parameters from MatLab
         val tData = data.copyOf()
         coroutineScope.launch{
-            val tempoData = FloatArray(1200)
+            val tempoData = FloatArray(DATA_SIZE)
             tData.forEachIndexed { index, floatArray ->
-                filters[index].filter(floatArray).copyInto(tempoData,index*200)
+                filters[index].filter(floatArray).copyInto(tempoData,index*FRAME_SIZE)
             }
             modulePartial(tempoData)
         }
@@ -125,5 +125,11 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
         sensorManager.unregisterListener(accl)
         sensorManager.unregisterListener(gyrol)
         sensorManager.unregisterListener(rotl)
+    }
+
+    companion object {
+        const val FRAME_SIZE = 200
+        const val DATA_SIZE = 6*200
+        const val FREQ_INTERVAL = 5L
     }
 }
