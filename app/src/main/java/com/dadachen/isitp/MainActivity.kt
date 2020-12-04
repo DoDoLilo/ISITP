@@ -1,10 +1,13 @@
 package com.dadachen.isitp
 
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
+import java.net.URI
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     val modulePath:String  = ""
@@ -19,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         //6th, additionally, it supports gesture estimation and show the doubt value
         //7th, remember, it should be always fully tested with both unit and integrated.
         //transfer post-processed IMU data to tensors
-        //
+        //TODO(implement the path by Uri or etc)
         val module = Module.load(modulePath)
         collector = IMUCollector(this){
             val tensor = Tensor.fromBlob(it, longArrayOf(200,6))
