@@ -62,7 +62,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     private fun checkGestureOnce() {
         val tData = FloatArray(192 * 6)
         for (i in 0 until 6) {
-            data[i].copyInto(tData, i * 192)
+            data[i].copyInto(tData, i * 192, 0, 192)
         }
         val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
         gestureType = gestureClassifier.forward(tData)
@@ -73,6 +73,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             "resnet.pt"
         }
         module = Module.load(Utils.assetFilePath(context, modulePath))
+
     }
 
     fun stop() {

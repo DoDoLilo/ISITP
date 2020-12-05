@@ -10,16 +10,17 @@ enum class GestureType {
     Pocket
 }
 
-class GestureClassifier(private val modulePath:String) {
+class GestureClassifier(private val modulePath: String) {
     private val module: Module = Module.load(modulePath)
-    fun forward(data:FloatArray):GestureType{
-        val res = module.forward(IValue.from(Tensor.fromBlob(data, longArrayOf(192, 6)))).toTensor().dataAsFloatArray
-        if(res.size!=2){
+    fun forward(data: FloatArray): GestureType {
+        val res = module.forward(IValue.from(Tensor.fromBlob(data, longArrayOf(1, 1, 192, 6))))
+            .toTensor().dataAsFloatArray
+        if (res.size != 2) {
             throw Exception("Gesture recognition output shape is (1, ${res.size}), expected: (1, 2).")
         }
-        return if (res[0] < res[1]){
+        return if (res[0] < res[1]) {
             GestureType.Hand
-        }else{
+        } else {
             GestureType.Pocket
         }
     }

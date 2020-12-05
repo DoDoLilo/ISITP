@@ -32,17 +32,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun loadInitModuleAndInitIMUCollector(){
+    private fun loadInitModuleAndInitIMUCollector(){
         collector = IMUCollector(this){
-
             tv_res.text = it.toString()
         }
-        Toast.makeText(this, "load success", Toast.LENGTH_SHORT).show()
+        startRecord()
     }
 
     private lateinit var collector:IMUCollector
     fun startRecord(){
         collector.start()
+        Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
+
     }
     fun stopRecord(){
         collector.stop()
