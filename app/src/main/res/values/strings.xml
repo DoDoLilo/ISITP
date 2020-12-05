@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ISITP</string>
+    <string name="load_module">加载模型</string>
 </resources>

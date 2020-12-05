@@ -1,16 +1,15 @@
 package com.dadachen.isitp
 
-import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_main.*
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
-import java.net.URI
-import java.net.URL
 
 class MainActivity : AppCompatActivity() {
-    val modulePath:String  = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -23,12 +22,25 @@ class MainActivity : AppCompatActivity() {
         //7th, remember, it should be always fully tested with both unit and integrated.
         //transfer post-processed IMU data to tensors
         //TODO(implement the path by Uri or etc)
-        val module = Module.load(modulePath)
+        initView()
+    }
+
+    private fun initView() {
+        bt_load_module.setOnClickListener {
+            loadInitModuleAndInitIMUCollector()
+        }
+    }
+
+    fun loadInitModuleAndInitIMUCollector(){
+        val module = Module.load(Utils.assetFilePath(this,"checkpoint_100.pt"))
         collector = IMUCollector(this){
             val tensor = Tensor.fromBlob(it, longArrayOf(200,6))
             val res = module.forward(IValue.from(tensor)).toTensor()
         }
+        Toast.makeText(this, "load success", Toast.LENGTH_SHORT).show()
     }
+
+
     private lateinit var collector:IMUCollector
     fun startRecord(){
         collector.start()
