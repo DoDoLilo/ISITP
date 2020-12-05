@@ -33,14 +33,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun loadInitModuleAndInitIMUCollector(){
-        val module = Module.load(Utils.assetFilePath(this,"checkpoint_100.pt"))
         collector = IMUCollector(this){
-            val tensor = Tensor.fromBlob(it, longArrayOf(200,6))
-            val res = module.forward(IValue.from(tensor)).toTensor()
+
+            tv_res.text = it.toString()
         }
         Toast.makeText(this, "load success", Toast.LENGTH_SHORT).show()
     }
-
 
     private lateinit var collector:IMUCollector
     fun startRecord(){

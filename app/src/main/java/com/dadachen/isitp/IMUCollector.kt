@@ -10,9 +10,12 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.pytorch.IValue
+import org.pytorch.Module
+import org.pytorch.Tensor
 import kotlin.concurrent.thread
 
-class IMUCollector(private val context: Context, private val modulePartial:(FloatArray)->Unit) {
+class IMUCollector(private val context: Context, private val modulePartial: (FloatArray) -> Unit) {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -29,6 +32,13 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
         isRunning = true
         thread(start = true) {
             var index = 0
+            while (index < 192) {
+                fillData(index++)
+                Thread.sleep(FREQ_INTERVAL)
+            }
+            //check gesture and init estimation module by it
+            checkGestureOnce()
+            index = 0
             while (isRunning) {
                 if (index == FRAME_SIZE) {
                     forward()
@@ -49,6 +59,21 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
         data[5][index] = gyro[2]
     }
 
+    private fun checkGestureOnce() {
+        val tData = FloatArray(192 * 6)
+        for (i in 0 until 6) {
+            data[i].copyInto(tData, i * 192)
+        }
+        val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
+        gestureType = gestureClassifier.forward(tData)
+        isRunning = true
+        val modulePath = if (gestureType == GestureType.Hand) {
+            "resnet.pt"
+        } else {
+            "resnet.pt"
+        }
+        module = Module.load(Utils.assetFilePath(context, modulePath))
+    }
 
     fun stop() {
         isRunning = false
@@ -60,20 +85,28 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
     }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private lateinit var module: Module
     private fun forward() {
         //low-pass filter need parameters from MatLab
+        //note: copy data in the main thread is so important,
+        //please do not copy data in the coroutineScope
         val tData = data.copyOf()
-        coroutineScope.launch{
+        coroutineScope.launch {
             val tempoData = FloatArray(DATA_SIZE)
             tData.forEachIndexed { index, floatArray ->
-                filters[index].filter(floatArray).copyInto(tempoData,index*FRAME_SIZE)
+                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
             }
-            modulePartial(tempoData)
+
+            val tensor = Tensor.fromBlob(tempoData, longArrayOf(200, 6))
+            val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+            //output res for display on UI
+            modulePartial(res)
+
         }
     }
 
-    var isRunning = false
-
+    private var isRunning = false
+    private var gestureType = GestureType.Hand
     private val rotl = object : SensorEventListener {
         @SuppressLint("SetTextI18n")
         override fun onSensorChanged(p0: SensorEvent?) {
@@ -129,7 +162,7 @@ class IMUCollector(private val context: Context, private val modulePartial:(Floa
 
     companion object {
         const val FRAME_SIZE = 200
-        const val DATA_SIZE = 6*200
+        const val DATA_SIZE = 6 * 200
         const val FREQ_INTERVAL = 5L
     }
 }
