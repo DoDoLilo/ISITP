@@ -1,6 +1,7 @@
 package com.dadachen.isitp;
 
 public class FilterConstant {
+
     public static float[] para = new float[]{
             -0.000140678669278532f,
             -0.000830645670156390f,
