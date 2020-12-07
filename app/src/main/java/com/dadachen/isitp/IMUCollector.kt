@@ -1,6 +1,5 @@
 package com.dadachen.isitp
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -109,7 +108,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     private var isRunning = false
     private var gestureType = GestureType.Hand
     private val rotl = object : SensorEventListener {
-        @SuppressLint("SetTextI18n")
         override fun onSensorChanged(p0: SensorEvent?) {
             rotVector[0] = p0!!.values[0]
             rotVector[1] = p0.values[1]
