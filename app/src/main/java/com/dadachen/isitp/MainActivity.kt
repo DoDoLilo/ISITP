@@ -8,6 +8,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
+import java.util.*
+
 /* *
 * 1st, obtain IMU data,done
 * 2nd, post processing IMU data by low-pass filters. todo
@@ -34,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitModuleAndInitIMUCollector(){
         collector = IMUCollector(this){
-            tv_res.text = it.toString()
+            tv_res.text = it.contentToString()
         }
         startRecord()
     }
