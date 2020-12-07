@@ -1,16 +1,14 @@
 package com.dadachen.isitp
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.androidplot.xy.LineAndPointFormatter
+import com.androidplot.xy.PointLabelFormatter
 import com.androidplot.xy.SimpleXYSeries
-import com.androidplot.xy.XYGraphWidget
+import com.androidplot.xy.XYSeries
 import kotlinx.android.synthetic.main.activity_main.*
-import java.text.FieldPosition
-import java.text.ParsePosition
-import kotlin.math.roundToInt
+
 
 /* *
 * 1st, obtain IMU data,done
@@ -26,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         initView()
     }
 
@@ -41,6 +38,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 tv_res.text = it.contentToString()
             }
+            drawPlot(Point(it[0],it[1]))
         }
         startRecord()
     }
@@ -49,37 +47,29 @@ class MainActivity : AppCompatActivity() {
     private fun startRecord() {
         collector.start()
         Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
-        drawPlot()
-
     }
+    private val seriesXNumbers = mutableListOf<Number>()
+    private val seriesYNumbers = mutableListOf<Number>()
+    private fun drawPlot(point: Point) {
+        seriesXNumbers.add(point.x)
+        seriesYNumbers.add(point.y)
 
-    private fun drawPlot() {
-        val numbers = List<Number>(6) { index -> index + 1 }
-        val numbersX = List<Number>(6) { index -> index + 1 }
-        val numbersY = List<Number>(6) { index -> index + 1 }
+        // Turn the above arrays into XYSeries':
+        val series1: XYSeries = SimpleXYSeries(
+            seriesXNumbers,  // SimpleXYSeries takes a List so turn our array into a List
+            seriesYNumbers,  // Y_VALS_ONLY means use the element index as the x value
+            "Series1"
+        ) // Set the display title of the series
 
-        val series1 = SimpleXYSeries(numbersX, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Series1")
-        val series2 = SimpleXYSeries(numbersY, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Series2")
-        plot.addSeries(series1, LineAndPointFormatter(this, R.xml.line_point_formatter_with_labels))
-        plot.addSeries(series2, LineAndPointFormatter(this, R.xml.line_point_formatter_with_labels))
+        val series1Format = LineAndPointFormatter()
+        series1Format.pointLabelFormatter = PointLabelFormatter()
+        series1Format.configure(
+            applicationContext,
+            R.xml.line_point_formatter_with_labels
+        )
 
-        plot.graph.getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).format = object :
-            java.text.Format() {
-            override fun format(
-                obj: Any?,
-                toAppendTo: StringBuffer?,
-                pos: FieldPosition?
-            ): StringBuffer {
-                val i = (obj as Number).toFloat().roundToInt()
-                return toAppendTo!!.append(numbers[i])
-            }
-
-            override fun parseObject(source: String?, pos: ParsePosition?): Any {
-                return Any()
-            }
-
-        }
-
+        plot.addSeries(series1, series1Format)
+        plot.redraw()
     }
 
     fun stopRecord() {
