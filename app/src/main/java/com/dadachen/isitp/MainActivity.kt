@@ -36,7 +36,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitModuleAndInitIMUCollector(){
         collector = IMUCollector(this){
-            tv_res.text = it.contentToString()
+            runOnUiThread {
+                tv_res.text = it.contentToString()
+            }
         }
         startRecord()
     }

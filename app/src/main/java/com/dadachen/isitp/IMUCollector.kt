@@ -97,7 +97,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                 filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
             }
 
-            val tensor = Tensor.fromBlob(tempoData, longArrayOf(200, 6))
+            val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
             val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
             //output res for display on UI
             modulePartial(res)
