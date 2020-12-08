@@ -40,6 +40,11 @@ class MainActivity : AppCompatActivity() {
             }
             drawPlot(Point(it[0],it[1]))
         }
+        collector.setGestureTypeChangeListener {
+            runOnUiThread {
+                tv_gesture.text = it.name
+            }
+        }
         startRecord()
     }
 

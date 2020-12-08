@@ -66,6 +66,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
         gestureType = gestureClassifier.forward(tData)
         isRunning = true
+        gestureTypeListener(gestureType)
         val modulePath = if (gestureType == GestureType.Hand) {
             "resnet.pt"
         } else {
@@ -151,6 +152,11 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         sensorManager.registerListener(rotl, rotVSensor, SensorManager.SENSOR_DELAY_FASTEST)
         sensorManager.registerListener(accl, accVSensor, SensorManager.SENSOR_DELAY_FASTEST)
         sensorManager.registerListener(gyrol, gyroVSensor, SensorManager.SENSOR_DELAY_FASTEST)
+    }
+
+    private lateinit var gestureTypeListener: (GestureType)->Unit
+    fun setGestureTypeChangeListener(listener:(GestureType)->Unit){
+        gestureTypeListener = listener
     }
 
     private fun stopSensor() {
