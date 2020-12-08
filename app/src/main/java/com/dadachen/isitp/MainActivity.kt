@@ -38,13 +38,14 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 tv_res.text = it.contentToString()
             }
-            drawPlot(Point(it[0],it[1]))
+            drawPlot(it[0],it[1])
         }
         collector.setGestureTypeChangeListener {
             runOnUiThread {
                 tv_gesture.text = it.name
             }
         }
+        initDraw()
         startRecord()
     }
 
@@ -53,27 +54,22 @@ class MainActivity : AppCompatActivity() {
         collector.start()
         Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
     }
-    private val seriesXNumbers = mutableListOf<Number>()
-    private val seriesYNumbers = mutableListOf<Number>()
-    private fun drawPlot(point: Point) {
-        seriesXNumbers.add(point.x)
-        seriesYNumbers.add(point.y)
+    private lateinit var series:TrackSeries
 
+    private fun initDraw(){
         // Turn the above arrays into XYSeries':
-        val series1: XYSeries = SimpleXYSeries(
-            seriesXNumbers,  // SimpleXYSeries takes a List so turn our array into a List
-            seriesYNumbers,  // Y_VALS_ONLY means use the element index as the x value
-            "Series1"
-        ) // Set the display title of the series
-
-        val series1Format = LineAndPointFormatter()
-        series1Format.pointLabelFormatter = PointLabelFormatter()
-        series1Format.configure(
+        series = TrackSeries("p")
+        val seriesFormat = LineAndPointFormatter()
+        seriesFormat.pointLabelFormatter = PointLabelFormatter()
+        seriesFormat.configure(
             applicationContext,
             R.xml.line_point_formatter_with_labels
         )
+        plot.addSeries(series, seriesFormat)
+    }
 
-        plot.addSeries(series1, series1Format)
+    private fun drawPlot(x:Float, y:Float) {
+        series.appendData(x, y)
         plot.redraw()
     }
 
