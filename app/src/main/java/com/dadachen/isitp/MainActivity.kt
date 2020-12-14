@@ -5,8 +5,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.androidplot.xy.LineAndPointFormatter
 import com.androidplot.xy.PointLabelFormatter
-import com.androidplot.xy.SimpleXYSeries
-import com.androidplot.xy.XYSeries
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -26,10 +24,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initView()
     }
-
+    var isLoading = false
     private fun initView() {
         bt_load_module.setOnClickListener {
-            loadInitModuleAndInitIMUCollector()
+            if (!isLoading) {
+                loadInitModuleAndInitIMUCollector()
+                isLoading = true
+            }else{
+                stopRecord()
+                isLoading = false
+            }
         }
     }
 
@@ -57,7 +61,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var series:TrackSeries
 
     private fun initDraw(){
-        // Turn the above arrays into XYSeries':
+        // Turn the arrays above into XYSeries':
         series = TrackSeries("p")
         val seriesFormat = LineAndPointFormatter()
         seriesFormat.pointLabelFormatter = PointLabelFormatter()
