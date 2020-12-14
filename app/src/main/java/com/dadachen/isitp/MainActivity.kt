@@ -9,13 +9,13 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 
 /* *
-* 1st, obtain IMU data,done
+* 1st, obtain IMU data.
 * 2nd, post processing IMU data by low-pass filters. todo
-* 3rd, transfer it to tensors done
-* 4th, forward the pre-saved net with tensors done
-* 5th, calculate the estimated location and display it on UI. todo
+* 3rd, transfer it to tensors.
+* 4th, forward the pre-saved net with tensors.
+* 5th, calculate the estimated location and display it on UI.
 * 6th, additionally, it supports gesture estimation and show the doubt value. todo
-* 7th, remember, it should be always fully tested with both unit and integrated. todo
+* 7th, remember, it should be always fully tested with both unit and integrated
 * @Author dadachen
 * */
 class MainActivity : AppCompatActivity() {
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
         plot.redraw()
     }
 
-    fun stopRecord() {
+    private fun stopRecord() {
         collector.stop()
     }
 }
