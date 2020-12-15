@@ -30,9 +30,11 @@ class MainActivity : AppCompatActivity() {
             if (!isLoading) {
                 loadInitModuleAndInitIMUCollector()
                 isLoading = true
+                bt_load_module.text = getText(R.string.stop)
             }else{
                 stopRecord()
                 isLoading = false
+                bt_load_module.text = getText(R.string.load_module)
             }
         }
     }
@@ -62,7 +64,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initDraw(){
         // Turn the arrays above into XYSeries':
-        series = TrackSeries("p")
+        series = TrackSeries("point")
         val seriesFormat = LineAndPointFormatter()
         seriesFormat.pointLabelFormatter = PointLabelFormatter()
         seriesFormat.configure(
@@ -77,7 +79,14 @@ class MainActivity : AppCompatActivity() {
         plot.redraw()
     }
 
+    private fun removeDraw() {
+        plot.removeSeries(series)
+//        plot.redraw()
+
+    }
+
     private fun stopRecord() {
+        removeDraw()
         collector.stop()
     }
 }
