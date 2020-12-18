@@ -90,17 +90,17 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     private fun checkGesture(tData: Array<FloatArray>) {
         coroutineScope.launch {
-            val data = FloatArray(192*6)
+            val gdata = FloatArray(192*6)
             for (i in 0 until 192){
                 for (j in 0 until 6) {
-                    data[i*192+j] = tData[i][j]
+                    gdata[i*6+j] = tData[j][i]
                 }
             }
-            val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
-            gestureType = gestureClassifier.forward(data)
+            gestureType = gestureClassifier.forward(gdata)
             gestureTypeListener(gestureType)
         }
     }
+    private val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
 
     fun stop() {
         status = Status.Idle
@@ -133,13 +133,13 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             //low-pass filters are muted.
 //                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
             for (i in 0 until 6){
-                tempoData[(index-offset)*6+i] = tData[index][i]
+                tempoData[(index-offset)*6+i] = tData[i][index]
             }
         }
         val tOffset = FRAME_SIZE-offset
         for (index in 0 until offset) {
             for (i in 0 until 6) {
-                tempoData[tOffset+index*6+i] = tData[index+tOffset][i]
+                tempoData[tOffset+index*6+i] = tData[i][index]
             }
         }
         return tempoData
