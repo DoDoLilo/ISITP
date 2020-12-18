@@ -26,7 +26,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         FloatArray(FRAME_SIZE)
     }
 
-    private enum class Status{
+    private enum class Status {
         Running, Idle
     }
 
@@ -42,7 +42,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             //check gesture and init estimation module by it
             checkGestureAndSwitchModule()
             index = 0
-            while (status==Status.Running) {
+            while (status == Status.Running) {
                 if (index == FRAME_SIZE) {
                     //check gesture but not changing estimation module
                     checkGesture()
@@ -50,7 +50,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                     estimate()
                     //next step reset offset to zero
                     index = 0
-                }else if(index % STEP==0){
+                } else if (index % STEP == 0) {
                     //note index is always more than 1
                     estimate(index)
                 }
@@ -74,9 +74,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         val modulePath = when (gestureType) {
             GestureType.Hand -> {
                 //need to be replaced
-
-
-
                 "resnet.pt"
             }
             GestureType.Pocket -> {
@@ -87,7 +84,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     }
 
-    private fun checkGesture(){
+    private fun checkGesture() {
         val tData = FloatArray(192 * 6)
         for (i in 0 until 6) {
             data[i].copyInto(tData, i * 192, 0, 192)
@@ -108,7 +105,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var module: Module
-    private fun estimate(offset:Int = 0){
+    private fun estimate(offset: Int = 0) {
         //low-pass filter need parameters from MatLab
         //note: copy data in the main thread is so important,
         //please do not copy data in the coroutineScope
@@ -118,10 +115,10 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             tData.forEachIndexed { index, floatArray ->
                 //low-pass filters are muted.
 //                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
-                if(offset>0){
-                    floatArray.copyInto(tempoData,index* FRAME_SIZE+offset,0,offset)
-                    floatArray.copyInto(tempoData,index* FRAME_SIZE,offset,floatArray.size)
-                }else{
+                if (offset > 0) {
+                    floatArray.copyInto(tempoData, index * FRAME_SIZE + offset, 0, offset)
+                    floatArray.copyInto(tempoData, index * FRAME_SIZE, offset, floatArray.size)
+                } else {
                     floatArray.copyInto(tempoData, index * FRAME_SIZE)
                 }
             }
@@ -182,8 +179,8 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         sensorManager.registerListener(gyrol, gyroVSensor, SensorManager.SENSOR_DELAY_FASTEST)
     }
 
-    private lateinit var gestureTypeListener: (GestureType)->Unit
-    fun setGestureTypeChangeListener(listener:(GestureType)->Unit){
+    private lateinit var gestureTypeListener: (GestureType) -> Unit
+    fun setGestureTypeChangeListener(listener: (GestureType) -> Unit) {
         gestureTypeListener = listener
     }
 
