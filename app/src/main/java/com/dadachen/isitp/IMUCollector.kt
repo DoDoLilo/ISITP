@@ -197,6 +197,13 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         gestureTypeListener = listener
     }
 
+    private fun resetSensor(){
+        stopSensor()
+        sensorManager.registerListener(rotl, rotVSensor, SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager.registerListener(accl, accVSensor, SensorManager.SENSOR_DELAY_FASTEST)
+        sensorManager.registerListener(gyrol, gyroVSensor, SensorManager.SENSOR_DELAY_FASTEST)
+    }
+
     private fun stopSensor() {
         sensorManager.unregisterListener(accl)
         sensorManager.unregisterListener(gyrol)

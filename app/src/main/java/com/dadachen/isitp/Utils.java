@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,5 +32,16 @@ public class Utils {
             }
             return file.getAbsolutePath();
         }
+    }
+
+    public static void writeToLocalStorage(String filePath,String content) throws IOException {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        FileWriter out = new FileWriter(file);
+        out.write(content);
+        out.flush();
+        out.close();
     }
 }
