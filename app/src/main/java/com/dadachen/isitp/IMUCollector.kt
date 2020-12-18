@@ -137,7 +137,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
         }
     }
-
+    private val stringBuilder = StringBuilder()
     private fun copyData(tData:Array<FloatArray>, offset:Int=0):FloatArray{
         val tempoData = FloatArray(DATA_SIZE)
         for (index in offset until FRAME_SIZE) {
