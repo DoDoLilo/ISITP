@@ -10,7 +10,7 @@ enum class GestureType {
     Pocket
 }
 
-class GestureClassifier(private val modulePath: String) {
+class GestureClassifier(modulePath: String) {
     private val module: Module = Module.load(modulePath)
     fun forward(data: FloatArray): GestureType {
         val res = module.forward(IValue.from(Tensor.fromBlob(data, longArrayOf(1, 1, 192, 6))))
