@@ -26,9 +26,13 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         FloatArray(FRAME_SIZE)
     }
 
+    private enum class Status{
+        Running, Idle
+    }
+
     fun start() {
         initSensor()
-        isRunning = true
+        status = Status.Running
         thread(start = true) {
             var index = 0
             while (index < 192) {
@@ -38,10 +42,13 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             //check gesture and init estimation module by it
             checkGestureOnce()
             index = 0
-            while (isRunning) {
+            while (status==Status.Running) {
                 if (index == FRAME_SIZE) {
+                    //check gesture but not changing estimation module
                     checkGesture()
+                    //estimation by using 200 frames IMU-sensor
                     forward()
+                    //next step reset offset to zero
                     index = 0
                 }
                 fillData(index++)
@@ -66,7 +73,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         }
         val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
         gestureType = gestureClassifier.forward(tData)
-        isRunning = true
         gestureTypeListener(gestureType)
         val modulePath = if (gestureType == GestureType.Hand) {
             "resnet.pt"
@@ -84,12 +90,11 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         }
         val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
         gestureType = gestureClassifier.forward(tData)
-        isRunning = true
         gestureTypeListener(gestureType)
     }
 
     fun stop() {
-        isRunning = false
+        status = Status.Idle
         stopSensor()
     }
 
@@ -107,7 +112,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         coroutineScope.launch {
             val tempoData = FloatArray(DATA_SIZE)
             tData.forEachIndexed { index, floatArray ->
-                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
+                //low-pass filters are muted.
+//                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
+                floatArray.copyInto(tempoData, index * FRAME_SIZE)
             }
 
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
@@ -118,7 +125,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         }
     }
 
-    private var isRunning = false
+    private var status = Status.Idle
     private var gestureType = GestureType.Hand
     private val rotl = object : SensorEventListener {
         override fun onSensorChanged(p0: SensorEvent?) {
