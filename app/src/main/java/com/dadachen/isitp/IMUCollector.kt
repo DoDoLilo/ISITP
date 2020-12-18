@@ -26,7 +26,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         FloatArray(FRAME_SIZE)
     }
 
-    private val currentLoc = floatArrayOf(0f,0f)
+    private val currentLoc = floatArrayOf(0f, 0f)
 
     private enum class Status {
         Running, Idle
@@ -112,8 +112,13 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                 //low-pass filters are muted.
 //                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
                 if (offset > 0) {
-                    floatArray.copyInto(tempoData, index * FRAME_SIZE + offset, 0, offset)
                     floatArray.copyInto(tempoData, index * FRAME_SIZE, offset, floatArray.size)
+                    floatArray.copyInto(
+                        tempoData,
+                        index * FRAME_SIZE + floatArray.size - offset,
+                        0,
+                        offset
+                    )
                 } else {
                     floatArray.copyInto(tempoData, index * FRAME_SIZE)
                 }
@@ -132,8 +137,8 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     }
 
     private fun calculateDistance(res: FloatArray) {
-        currentLoc[0] += res[0]* V_INTERVAL
-        currentLoc[1] += res[1]* V_INTERVAL
+        currentLoc[0] += res[0] * V_INTERVAL
+        currentLoc[1] += res[1] * V_INTERVAL
     }
 
     private var status = Status.Idle
