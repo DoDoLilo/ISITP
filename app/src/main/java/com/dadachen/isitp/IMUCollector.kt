@@ -50,6 +50,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                     estimate()
                     //next step reset offset to zero
                     index = 0
+                }else if(index % STEP==0){
+                    //note index is always more than 1
+                    estimate(index)
                 }
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
@@ -71,6 +74,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         val modulePath = when (gestureType) {
             GestureType.Hand -> {
                 //need to be replaced
+
+
+
                 "resnet.pt"
             }
             GestureType.Pocket -> {
@@ -102,7 +108,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private lateinit var module: Module
-    private fun estimate() {
+    private fun estimate(offset:Int = 0){
         //low-pass filter need parameters from MatLab
         //note: copy data in the main thread is so important,
         //please do not copy data in the coroutineScope
@@ -112,7 +118,12 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             tData.forEachIndexed { index, floatArray ->
                 //low-pass filters are muted.
 //                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
-                floatArray.copyInto(tempoData, index * FRAME_SIZE)
+                if(offset>0){
+                    floatArray.copyInto(tempoData,index* FRAME_SIZE+offset,0,offset)
+                    floatArray.copyInto(tempoData,index* FRAME_SIZE,offset,floatArray.size)
+                }else{
+                    floatArray.copyInto(tempoData, index * FRAME_SIZE)
+                }
             }
 
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
@@ -186,5 +197,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         const val FRAME_SIZE = 200
         const val DATA_SIZE = 6 * 200
         const val FREQ_INTERVAL = 5L
+        const val STEP = 10
     }
 }
