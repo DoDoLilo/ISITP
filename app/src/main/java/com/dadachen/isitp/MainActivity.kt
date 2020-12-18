@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var collector: IMUCollector
     private fun startRecord() {
         collector.start()
-        Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
     }
     private lateinit var series:TrackSeries
 

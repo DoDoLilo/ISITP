@@ -29,10 +29,10 @@ class GestureClassifier(modulePath: String) {
         }
     }
 
-    override fun FloatArray.maxIndex():Int{
+    private fun FloatArray.maxIndex():Int{
         var res = -1
         var t = Float.MIN_VALUE
-        for (i in 0 until this.size){
+        for (i in this.indices){
             if(t<this[i]){
                 res = i
                 t = this[i]
