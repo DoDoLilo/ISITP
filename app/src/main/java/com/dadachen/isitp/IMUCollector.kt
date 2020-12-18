@@ -26,6 +26,8 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         FloatArray(FRAME_SIZE)
     }
 
+    private val currentLoc = floatArrayOf(0f,0f)
+
     private enum class Status {
         Running, Idle
     }
@@ -126,9 +128,15 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
             val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
             //output res for display on UI
-            modulePartial(res)
+            calculateDistance(res)
+            modulePartial(currentLoc)
 
         }
+    }
+
+    private fun calculateDistance(res: FloatArray) {
+        currentLoc[0] += res[0]* V_INTERVAL
+        currentLoc[1] += res[1]* V_INTERVAL
     }
 
     private var status = Status.Idle
@@ -195,5 +203,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         const val DATA_SIZE = 6 * 200
         const val FREQ_INTERVAL = 5L
         const val STEP = 10
+        const val V_INTERVAL = 1f / STEP
     }
 }
