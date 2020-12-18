@@ -71,16 +71,10 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     private fun checkGestureAndSwitchModule() {
         checkGesture()
-        val modulePath = when (gestureType) {
-            GestureType.Hand -> {
-                //need to be replaced
-                "resnet.pt"
-            }
-            GestureType.Pocket -> {
-                "resnet.pt"
-            }
-        }
-        module = Module.load(Utils.assetFilePath(context, modulePath))
+        val handModule = Module.load(Utils.assetFilePath(context, "resnet.pt"))
+        val pocketModule = Module.load(Utils.assetFilePath(context, "resnet.pt"))
+
+        module = arrayOf(handModule, pocketModule)
 
     }
 
@@ -104,7 +98,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private lateinit var module: Module
+    private lateinit var module: Array<Module>
     private fun estimate(offset: Int = 0) {
         //low-pass filter need parameters from MatLab
         //note: copy data in the main thread is so important,
@@ -124,7 +118,10 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             }
 
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
-            val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+            val res = when(gestureType){
+                GestureType.Hand-> module[0].forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+                GestureType.Pocket-> module[1].forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+            }
             //output res for display on UI
             modulePartial(res)
 
