@@ -31,7 +31,7 @@ class GestureClassifier(modulePath: String) {
 
     private fun FloatArray.maxIndex():Int{
         var res = -1
-        var t = Float.MIN_VALUE
+        var t = this[0]-1
         for (i in this.indices){
             if(t<this[i]){
                 res = i
