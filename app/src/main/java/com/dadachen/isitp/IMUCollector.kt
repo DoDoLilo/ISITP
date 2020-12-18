@@ -91,7 +91,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         for (i in 0 until 6) {
             data[i].copyInto(tData, i * 192, 0, 192)
         }
-        val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
+        val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
         gestureType = gestureClassifier.forward(tData)
         gestureTypeListener(gestureType)
     }
