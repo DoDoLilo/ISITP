@@ -31,11 +31,16 @@ class MainActivity : AppCompatActivity() {
                 loadInitModuleAndInitIMUCollector()
                 isLoading = true
                 bt_load_module.text = getText(R.string.stop)
+                sw_save_csv.isEnabled = false
             }else{
                 stopRecord()
+                sw_save_csv.isEnabled = true
                 isLoading = false
                 bt_load_module.text = getText(R.string.load_module)
             }
+        }
+        sw_save_csv.setOnCheckedChangeListener { _, isChecked ->
+            FilterConstant.RECORD_CSV = isChecked
         }
     }
 

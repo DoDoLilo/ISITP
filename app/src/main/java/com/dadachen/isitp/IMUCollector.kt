@@ -71,7 +71,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         data[3][index] = gyro[0]
         data[4][index] = gyro[1]
         data[5][index] = gyro[2]
-        stringBuilder.append("${acc[0]}, ${acc[1]}, ${acc[2]}, ${gyro[0]}, ${gyro[1]}, ${gyro[2]}\n")
+        if (FilterConstant.RECORD_CSV){
+            stringBuilder.append("${acc[0]}, ${acc[1]}, ${acc[2]}, ${gyro[0]}, ${gyro[1]}, ${gyro[2]}\n")
+        }
     }
 
     private fun checkGestureAndSwitchModule() {
@@ -101,7 +103,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     fun stop() {
         status = Status.Idle
-        Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
+        if(FilterConstant.RECORD_CSV){
+            Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
+        }
         stopSensor()
     }
 
