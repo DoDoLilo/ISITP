@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
+import java.lang.StringBuilder
 import kotlin.concurrent.thread
 
 class IMUCollector(private val context: Context, private val modulePartial: (FloatArray) -> Unit) {
@@ -35,6 +36,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     fun start() {
         initSensor()
         status = Status.Running
+        stringBuilder.clear()
         thread(start = true) {
             var index = 0
             while (index < 192) {
@@ -69,6 +71,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         data[3][index] = gyro[0]
         data[4][index] = gyro[1]
         data[5][index] = gyro[2]
+        stringBuilder.append("${acc[0]}, ${acc[1]}, ${acc[2]}, ${gyro[0]}, ${gyro[1]}, ${gyro[2]}\n")
     }
 
     private fun checkGestureAndSwitchModule() {
@@ -85,7 +88,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         module = Module.load(Utils.assetFilePath(context, modulePath))
 
     }
-
+    private val stringBuilder = StringBuilder()
     private fun checkGesture() {
         val tData = FloatArray(192 * 6)
         for (i in 0 until 6) {
@@ -98,6 +101,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     fun stop() {
         status = Status.Idle
+        Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
         stopSensor()
     }
 
