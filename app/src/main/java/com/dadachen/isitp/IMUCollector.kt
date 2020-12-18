@@ -84,6 +84,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             GestureType.Pocket -> {
                 "resnet.pt"
             }
+            else -> {
+                "resnet.pt"
+            }
         }
         module = Module.load(Utils.assetFilePath(context, modulePath))
     }
@@ -100,7 +103,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             gestureTypeListener(gestureType)
         }
     }
-    private val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
+    private val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture_3.pt"))
 
     fun stop() {
         status = Status.Idle

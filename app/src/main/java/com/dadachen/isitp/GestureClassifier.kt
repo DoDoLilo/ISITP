@@ -8,7 +8,8 @@ import java.lang.Exception
 
 enum class GestureType {
     Hand,
-    Pocket
+    Pocket,
+    Swing
 }
 
 class GestureClassifier(modulePath: String) {
@@ -16,16 +17,27 @@ class GestureClassifier(modulePath: String) {
     fun forward(data: FloatArray): GestureType {
         val res = module.forward(IValue.from(Tensor.fromBlob(data, longArrayOf(1, 1, 192, 6))))
             .toTensor().dataAsFloatArray
-        if (res.size != 2) {
+        if (res.size != 3) {
             throw Exception("Gesture recognition output shape is (1, ${res.size}), expected: (1, 2).")
         }
         Log.d("gesture", res.contentToString())
-        //TODO there seems to be a bug
-        // cuz the module losing a soft-max layer behind the last full-connect layer.
-        return if (res[0] < res[1]) {
-            GestureType.Hand
-        } else {
-            GestureType.Pocket
+        return when(res.maxIndex()){
+            0-> GestureType.Pocket
+            1-> GestureType.Hand
+            2-> GestureType.Swing
+            else-> GestureType.Hand
         }
+    }
+
+    override fun FloatArray.maxIndex():Int{
+        var res = -1
+        var t = Float.MIN_VALUE
+        for (i in 0 until this.size){
+            if(t<this[i]){
+                res = i
+                t = this[i]
+            }
+        }
+        return res
     }
 }
