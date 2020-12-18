@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initView()
     }
-    var isLoading = false
+    private var isLoading = false
     private fun initView() {
         bt_load_module.setOnClickListener {
             if (!isLoading) {

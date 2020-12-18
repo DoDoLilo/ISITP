@@ -40,6 +40,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             index = 0
             while (isRunning) {
                 if (index == FRAME_SIZE) {
+                    checkGesture()
                     forward()
                     index = 0
                 }
@@ -74,6 +75,17 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         }
         module = Module.load(Utils.assetFilePath(context, modulePath))
 
+    }
+
+    private fun checkGesture(){
+        val tData = FloatArray(192 * 6)
+        for (i in 0 until 6) {
+            data[i].copyInto(tData, i * 192, 0, 192)
+        }
+        val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "mobile_model.pt"))
+        gestureType = gestureClassifier.forward(tData)
+        isRunning = true
+        gestureTypeListener(gestureType)
     }
 
     fun stop() {
