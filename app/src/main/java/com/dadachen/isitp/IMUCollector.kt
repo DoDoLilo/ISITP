@@ -42,19 +42,22 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                 Thread.sleep(FREQ_INTERVAL)
             }
             //check gesture and init estimation module by it
-            checkGestureAndSwitchModule()
+            checkGestureAndSwitchModule(data.copyOf())
             index = 0
             while (status == Status.Running) {
+
                 if (index == FRAME_SIZE) {
+                    val tData = data.copyOf()
                     //check gesture but not changing estimation module
-                    checkGesture()
+                    checkGesture(tData)
                     //estimation by using 200 frames IMU-sensor
-                    estimate()
+                    estimate(tData)
                     //next step reset offset to zero
                     index = 0
                 } else if (index % STEP == 0) {
                     //note index is always more than 1
-                    estimate(index)
+                    val tData = data.copyOf()
+                    estimate(tData,index)
                 }
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
@@ -71,8 +74,8 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         data[5][index] = gyro[2]
     }
 
-    private fun checkGestureAndSwitchModule() {
-        checkGesture()
+    private fun checkGestureAndSwitchModule(tData: Array<FloatArray>) {
+        checkGesture(tData)
         val modulePath = when (gestureType) {
             GestureType.Hand -> {
                 //need to be replaced
@@ -83,17 +86,20 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             }
         }
         module = Module.load(Utils.assetFilePath(context, modulePath))
-
     }
 
-    private fun checkGesture() {
-        val tData = FloatArray(192 * 6)
-        for (i in 0 until 6) {
-            data[i].copyInto(tData, i * 192, 0, 192)
+    private fun checkGesture(tData: Array<FloatArray>) {
+        coroutineScope.launch {
+            val data = FloatArray(192*6)
+            for (i in 0 until 192){
+                for (j in 0 until 6) {
+                    data[i*192+j] = tData[i][j]
+                }
+            }
+            val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
+            gestureType = gestureClassifier.forward(data)
+            gestureTypeListener(gestureType)
         }
-        val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture.pt"))
-        gestureType = gestureClassifier.forward(tData)
-        gestureTypeListener(gestureType)
     }
 
     fun stop() {
@@ -104,32 +110,14 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     private val filters = Array(6) {
         IMULowPassFilter(FilterConstant.para)
     }
-
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private lateinit var module: Module
-    private fun estimate(offset: Int = 0) {
+    private fun estimate(tData: Array<FloatArray>, offset: Int = 0) {
         //low-pass filter need parameters from MatLab
         //note: copy data in the main thread is so important,
         //please do not copy data in the coroutineScope
-        val tData = data.copyOf()
         coroutineScope.launch {
-            val tempoData = FloatArray(DATA_SIZE)
-            tData.forEachIndexed { index, floatArray ->
-                //low-pass filters are muted.
-//                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
-                if (offset > 0) {
-                    floatArray.copyInto(tempoData, index * FRAME_SIZE, offset, floatArray.size)
-                    floatArray.copyInto(
-                        tempoData,
-                        index * FRAME_SIZE + floatArray.size - offset,
-                        0,
-                        offset
-                    )
-                } else {
-                    floatArray.copyInto(tempoData, index * FRAME_SIZE)
-                }
-            }
-
+            val tempoData = copyData(tData,offset)
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
             val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
             //output res for display on UI
@@ -137,6 +125,24 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             modulePartial(currentLoc)
 
         }
+    }
+
+    private fun copyData(tData:Array<FloatArray>, offset:Int=0):FloatArray{
+        val tempoData = FloatArray(DATA_SIZE)
+        for (index in offset until FRAME_SIZE) {
+            //low-pass filters are muted.
+//                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
+            for (i in 0 until 6){
+                tempoData[(index-offset)*6+i] = tData[index][i]
+            }
+        }
+        val tOffset = FRAME_SIZE-offset
+        for (index in 0 until offset) {
+            for (i in 0 until 6) {
+                tempoData[tOffset+index*6+i] = tData[index+tOffset][i]
+            }
+        }
+        return tempoData
     }
 
     private fun calculateDistance(res: FloatArray) {
@@ -197,7 +203,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         gestureTypeListener = listener
     }
 
-    private fun resetSensor(){
+    private fun resetSensor() {
         stopSensor()
         sensorManager.registerListener(rotl, rotVSensor, SensorManager.SENSOR_DELAY_FASTEST)
         sensorManager.registerListener(accl, accVSensor, SensorManager.SENSOR_DELAY_FASTEST)

@@ -42,8 +42,8 @@ class ExampleInstrumentedTest {
             tdata[i] = data[i+offset].toFloatArray()
         }
         val ttData = FloatArray(192*6)
-        for (i in 0 until 6){
-            tdata[i].copyInto(ttData,i*192)
+        for (i in 0 until 192){
+            tdata[i].copyInto(ttData,i*6)
         }
         val res = module.forward(IValue.from(Tensor.fromBlob(ttData, longArrayOf(1,1,192,6)))).toTensor().dataAsFloatArray
         println(res.contentToString())
