@@ -68,10 +68,14 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     private fun checkGestureAndSwitchModule() {
         checkGesture()
-        val modulePath = if (gestureType == GestureType.Hand) {
-            "resnet.pt"
-        } else {
-            "resnet.pt"
+        val modulePath = when (gestureType) {
+            GestureType.Hand -> {
+                //need to be replaced
+                "resnet.pt"
+            }
+            GestureType.Pocket -> {
+                "resnet.pt"
+            }
         }
         module = Module.load(Utils.assetFilePath(context, modulePath))
 
