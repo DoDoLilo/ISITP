@@ -10,6 +10,7 @@ import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
 import kotlin.concurrent.thread
+import kotlin.math.max
 
 internal class IMUCollectorZY(
     private val context: Context,
@@ -45,7 +46,7 @@ internal class IMUCollectorZY(
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
             }
-            estimate(data.copyOf(), times.copyOf())
+            estimate(data.copyOf(), times.copyOf(), offset = -1)
             index = 0
             fillData(index++)
             Thread.sleep(FREQ_INTERVAL)
@@ -125,11 +126,11 @@ internal class IMUCollectorZY(
     private lateinit var module: Module
     private fun estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
 
-        val tempoData = copyData2(tData, offset)
+        val tempoData = copyData2(tData, max(0, offset))
         val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
         val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
         //output res for display on UI
-        calculateDistance(res, tTimes[offset], getMovedTime(tTimes, offset))
+        calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
 
     }
 
@@ -149,16 +150,6 @@ internal class IMUCollectorZY(
     }
 
     private fun getMovedTime(tTimes: LongArray, offset: Int = -1): Float {
-//        val tempTimes=LongArray(FRAME_SIZE)
-//        for(index in offset until FRAME_SIZE){
-//            tempTimes[index-offset]=tTimes[index]
-//        }
-//        var startIndex= FRAME_SIZE-offset
-//        for(index in 0 until offset){
-//            tempTimes[startIndex+index]=tTimes[index]
-//        }
-//
-//        return (tempTimes[10]-tempTimes[0])/1000f
         if (offset == -1) {
             return (tTimes[FRAME_SIZE - 1] - tTimes[0]) / 1000f
         } else {
