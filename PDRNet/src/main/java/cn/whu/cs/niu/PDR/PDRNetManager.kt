@@ -3,9 +3,6 @@ package cn.whu.cs.niu.PDR
 import android.content.Context
 import com.dadachen.isitp.IMUCollectorZY
 
-/***
- * 
- */
 class PDRNetManager {
     private var imuCollector: IMUCollectorZY? = null
 
@@ -120,6 +117,13 @@ class PDRNetManager {
     private var completion: ((times: LongArray, Array<DoubleArray>) -> Unit)? = null
 
 
+    /**
+     * 开始采集PDR，使用回调函数获取时间戳和位置数据
+     *
+     * @param context 安卓上下文
+     * @param module PDR网络模型的位置
+     * @param handler 需要的回调函数
+     */
     fun start(
         context: Context,
         module: String = "mobile_model.ptl",
@@ -136,7 +140,10 @@ class PDRNetManager {
 
     }
 
-    //Note, stop must be invoked after start, or it would crash due to NullPointer exception
+    /**
+     * 停止采集PDR
+     *
+     */
     fun stop() {
         imuCollector?.stop()
     }
