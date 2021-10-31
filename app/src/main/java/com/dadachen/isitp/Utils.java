@@ -1,6 +1,7 @@
 package com.dadachen.isitp;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +18,7 @@ public class Utils {
      */
     public static String assetFilePath(Context context, String assetName) throws IOException {
         File file = new File(context.getFilesDir(), assetName);
+
         if (file.exists() && file.length() > 0) {
             return file.getAbsolutePath();
         }
