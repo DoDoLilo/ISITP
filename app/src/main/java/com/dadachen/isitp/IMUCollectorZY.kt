@@ -17,7 +17,7 @@ import java.io.File
 import java.io.FileReader
 import kotlin.concurrent.thread
 
-class IMUCollectorZY(private val context: Context) {
+class IMUCollectorZY(private val context: Context, private val modulePath:String = "mobile_model.ptl") {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -30,7 +30,7 @@ class IMUCollectorZY(private val context: Context) {
     }
     private val times = LongArray(FRAME_SIZE)
     private val currentLoc = floatArrayOf(0f, 0f)
-
+    private val rotData = FloatArray(4)
     private val positions = Array(FRAME_SIZE / STEP * SECOND) {
         FloatArray(3)
     }
@@ -45,7 +45,7 @@ class IMUCollectorZY(private val context: Context) {
 
         //start thread
         thread(start = true) { //创建一个thread并运行指定代码块，()->Unit
-            module = Module.load(Utils.assetFilePath(context, "mobile_model.ptl"))
+            module = Module.load(Utils.assetFilePath(context, modulePath))
             var index=0
             var positionIndex = -1
             while(index< FRAME_SIZE){
@@ -88,9 +88,12 @@ class IMUCollectorZY(private val context: Context) {
         return gyroAccChanged
     }
 
-    private fun updateLocalPositions()
+    private fun updateLocalPositions(){
+        //todo
+    }
     private fun fillData(index: Int) {
         times[index] = System.currentTimeMillis()
+        rotVector.copyInto(rotData)
         val gyroAccChanged=changeTheAxisOfAccAndGyro(
             acc[0],acc[1],acc[2], //acc
             gyro[0],gyro[1],gyro[2],  //gyro
@@ -101,7 +104,6 @@ class IMUCollectorZY(private val context: Context) {
         data[3][index] = gyroAccChanged[3]
         data[4][index] = gyroAccChanged[4]
         data[5][index] = gyroAccChanged[5]
-
     }
 
     fun stop() {
@@ -155,9 +157,9 @@ class IMUCollectorZY(private val context: Context) {
         currentLoc[1] += res[1] * movedTime
         //do some operations to pass locations and time array to Class Tool.
         //todo
-        handler?.apply { this(floatArrayOf(currentLoc[0], currentLoc[1]), tTime) }
+        handler?.apply { this(floatArrayOf(currentLoc[0], currentLoc[1]), tTime, rotData) }
     }
-    var handler: ((location: FloatArray, time: Long) ->Void)? = null
+    var handler: ((location: FloatArray, time: Long, vector: FloatArray) ->Unit)? = null
 
     private var status = Status.Idle
     private val rotl = object : SensorEventListener {
