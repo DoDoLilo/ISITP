@@ -31,9 +31,6 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
     private val times = LongArray(FRAME_SIZE)
     private val currentLoc = floatArrayOf(0f, 0f)
     private val rotData = FloatArray(4)
-    private val positions = Array(FRAME_SIZE / STEP * SECOND) {
-        FloatArray(3)
-    }
 
     private enum class Status {
         Running, Idle
@@ -47,17 +44,20 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
         thread(start = true) { //创建一个thread并运行指定代码块，()->Unit
             module = Module.load(Utils.assetFilePath(context, modulePath))
             var index=0
-            var positionIndex = -1
             while(index< FRAME_SIZE){
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
             }
+            estimate(data.copyOf(), times.copyOf())
+            index = 0
+            fillData(index++)
+            Thread.sleep(FREQ_INTERVAL)
             while (status == Status.Running) {
                 if (index == FRAME_SIZE) {
                     val tData = data.copyOf()
                     val tTimes = times.copyOf()
                     //estimation by using 200 frames IMU-sensor
-                    estimate(tData,tTimes,0, )
+                    estimate(tData,tTimes,0)
                     //next step reset offset to zero
                     index = 0
                 } else if (index % STEP == 0) { //每10*5ms进行一输出
@@ -138,7 +138,7 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
         return tempoData
     }
 
-    private fun getMovedTime(tTimes: LongArray, offset: Int=0):Float{
+    private fun getMovedTime(tTimes: LongArray, offset: Int=-1):Float{
 //        val tempTimes=LongArray(FRAME_SIZE)
 //        for(index in offset until FRAME_SIZE){
 //            tempTimes[index-offset]=tTimes[index]
@@ -149,7 +149,12 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
 //        }
 //
 //        return (tempTimes[10]-tempTimes[0])/1000f
-        return (tTimes[(offset + STEP) % FRAME_SIZE] - tTimes[offset]) / 1000f
+        if(offset == -1){
+            return (tTimes[FRAME_SIZE - 1] - tTimes[0]) / 1000f
+        }
+        else{
+            return (tTimes[(offset + STEP) % FRAME_SIZE] - tTimes[offset]) / 1000f
+        }
     }
 
     private fun calculateDistance(res: FloatArray,tTime: Long, movedTime: Float) {
