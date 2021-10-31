@@ -1,4 +1,4 @@
- package com.dadachen.isitp
+package cn.whu.cs.niu.PDR
 
 import android.content.Context
 import android.hardware.Sensor
@@ -6,18 +6,16 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileReader
 import kotlin.concurrent.thread
+import kotlin.math.max
 
-class IMUCollectorZY(private val context: Context, private val modulePath:String = "mobile_model.ptl") {
+internal class IMUCollectorZY(
+    private val context: Context,
+    private val modulePath: String = "mobile_model.ptl"
+) {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -43,12 +41,12 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
         //start thread
         thread(start = true) { //创建一个thread并运行指定代码块，()->Unit
             module = Module.load(Utils.assetFilePath(context, modulePath))
-            var index=0
-            while(index< FRAME_SIZE){
+            var index = 0
+            while (index < FRAME_SIZE) {
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
             }
-            estimate(data.copyOf(), times.copyOf())
+            estimate(data.copyOf(), times.copyOf(), offset = -1)
             index = 0
             fillData(index++)
             Thread.sleep(FREQ_INTERVAL)
@@ -57,14 +55,14 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
                     val tData = data.copyOf()
                     val tTimes = times.copyOf()
                     //estimation by using 200 frames IMU-sensor
-                    estimate(tData,tTimes,0)
+                    estimate(tData, tTimes, 0)
                     //next step reset offset to zero
                     index = 0
                 } else if (index % STEP == 0) { //每10*5ms进行一输出
                     //note index is always more than 1
                     val tData = data.copyOf()
                     val tTimes = times.copyOf()
-                    estimate(tData,tTimes,index)
+                    estimate(tData, tTimes, index)
                 }
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL) //这里控制了sleep 5ms，即200Hz
@@ -72,32 +70,45 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
         }
     }
 
-    private fun changeTheAxisOfAccAndGyro(acc0:Float,acc1:Float,acc2:Float,gyro0:Float,gyro1: Float,gyro2: Float,
-    rot0:Float,rot1: Float,rot2: Float,rot3: Float): FloatArray {
+    private fun changeTheAxisOfAccAndGyro(
+        acc0: Float, acc1: Float, acc2: Float, gyro0: Float, gyro1: Float, gyro2: Float,
+        rot0: Float, rot1: Float, rot2: Float, rot3: Float
+    ): FloatArray {
 //        change the acc and the gyro to the same axis by using the rot
 //        1.change the rotVector array
 //        val rotChanged = floatArrayOf(rotVector[3], rotVector[0], rotVector[1], rotVector[2])
-        val rotQuaternion=Quaternion(rot3, rot0, rot1, rot2)
-        val gyroQuaternion=Quaternion(0f,gyro0,gyro1,gyro2)
-        val accQuaternion=Quaternion(0f,acc0,acc1,acc2)
+        val rotQuaternion = Quaternion(rot3, rot0, rot1, rot2)
+        val gyroQuaternion = Quaternion(0f, gyro0, gyro1, gyro2)
+        val accQuaternion = Quaternion(0f, acc0, acc1, acc2)
 //        2.use the Quaternion functions
-        val gyroChanged=rotQuaternion.times(gyroQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
-        val accChanged=rotQuaternion.times(accQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
+        val gyroChanged =
+            rotQuaternion.times(gyroQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
+        val accChanged =
+            rotQuaternion.times(accQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
 //        3.past the values to acc and gyro
-        val gyroAccChanged= floatArrayOf(gyroChanged[1],gyroChanged[2],gyroChanged[3],accChanged[1],accChanged[2],accChanged[3])
+        val gyroAccChanged = floatArrayOf(
+            gyroChanged[1],
+            gyroChanged[2],
+            gyroChanged[3],
+            accChanged[1],
+            accChanged[2],
+            accChanged[3]
+        )
         return gyroAccChanged
     }
 
-    private fun updateLocalPositions(){
+    private fun updateLocalPositions() {
         //todo
     }
+
     private fun fillData(index: Int) {
         times[index] = System.currentTimeMillis()
         rotVector.copyInto(rotData)
-        val gyroAccChanged=changeTheAxisOfAccAndGyro(
-            acc[0],acc[1],acc[2], //acc
-            gyro[0],gyro[1],gyro[2],  //gyro
-            rotVector[0],rotVector[1],rotVector[2],rotVector[3]) //rot
+        val gyroAccChanged = changeTheAxisOfAccAndGyro(
+            acc[0], acc[1], acc[2], //acc
+            gyro[0], gyro[1], gyro[2],  //gyro
+            rotVector[0], rotVector[1], rotVector[2], rotVector[3]
+        ) //rot
         data[0][index] = gyroAccChanged[0]
         data[1][index] = gyroAccChanged[1]
         data[2][index] = gyroAccChanged[2]
@@ -113,58 +124,48 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
 
 
     private lateinit var module: Module
-    private fun  estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
+    private fun estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
 
-        val tempoData = copyData2(tData,offset)
+        val tempoData = copyData2(tData, max(0, offset))
         val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
         val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
         //output res for display on UI
-        calculateDistance(res, tTimes[offset],getMovedTime(tTimes, offset))
+        calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
 
     }
 
-    private fun copyData2(tData: Array<FloatArray>, offset: Int=0):FloatArray{
-        val tempoData=FloatArray(DATA_SIZE)
-        for(sensorIndex in 0 until 6){
-            var startIndex= FRAME_SIZE*sensorIndex
-            for(index in offset until FRAME_SIZE){
-                tempoData[startIndex+(index-offset)]=tData[sensorIndex][index]
+    private fun copyData2(tData: Array<FloatArray>, offset: Int = 0): FloatArray {
+        val tempoData = FloatArray(DATA_SIZE)
+        for (sensorIndex in 0 until 6) {
+            var startIndex = FRAME_SIZE * sensorIndex
+            for (index in offset until FRAME_SIZE) {
+                tempoData[startIndex + (index - offset)] = tData[sensorIndex][index]
             }
-            startIndex+=(FRAME_SIZE-offset)
-            for(index in 0 until offset){
-                tempoData[startIndex+index]=tData[sensorIndex][index]
+            startIndex += (FRAME_SIZE - offset)
+            for (index in 0 until offset) {
+                tempoData[startIndex + index] = tData[sensorIndex][index]
             }
         }
         return tempoData
     }
 
-    private fun getMovedTime(tTimes: LongArray, offset: Int=-1):Float{
-//        val tempTimes=LongArray(FRAME_SIZE)
-//        for(index in offset until FRAME_SIZE){
-//            tempTimes[index-offset]=tTimes[index]
-//        }
-//        var startIndex= FRAME_SIZE-offset
-//        for(index in 0 until offset){
-//            tempTimes[startIndex+index]=tTimes[index]
-//        }
-//
-//        return (tempTimes[10]-tempTimes[0])/1000f
-        if(offset == -1){
+    private fun getMovedTime(tTimes: LongArray, offset: Int = -1): Float {
+        if (offset == -1) {
             return (tTimes[FRAME_SIZE - 1] - tTimes[0]) / 1000f
-        }
-        else{
+        } else {
             return (tTimes[(offset + STEP) % FRAME_SIZE] - tTimes[offset]) / 1000f
         }
     }
 
-    private fun calculateDistance(res: FloatArray,tTime: Long, movedTime: Float) {
+    private fun calculateDistance(res: FloatArray, tTime: Long, movedTime: Float) {
         currentLoc[0] += res[0] * movedTime
         currentLoc[1] += res[1] * movedTime
         //do some operations to pass locations and time array to Class Tool.
         //todo
         handler?.apply { this(floatArrayOf(currentLoc[0], currentLoc[1]), tTime, rotData) }
     }
-    var handler: ((location: FloatArray, time: Long, vector: FloatArray) ->Unit)? = null
+
+    var handler: ((location: FloatArray, time: Long, vector: FloatArray) -> Unit)? = null
 
     private var status = Status.Idle
     private val rotl = object : SensorEventListener {
@@ -232,7 +233,7 @@ class IMUCollectorZY(private val context: Context, private val modulePath:String
         const val DATA_SIZE = 6 * 200
         const val FREQ_INTERVAL = 5L
         const val STEP = 10
-        const val V_INTERVAL = 1f / (FRAME_SIZE/ STEP)
+        const val V_INTERVAL = 1f / (FRAME_SIZE / STEP)
         const val SECOND = 20
     }
 }

@@ -1,4 +1,4 @@
-package com.dadachen.isitp;
+package cn.whu.cs.niu.PDR;
 
 import android.content.Context;
 import android.util.Log;
@@ -36,7 +36,7 @@ public class Utils {
         }
     }
 
-    public static void writeToLocalStorage(String filePath,String content) throws IOException {
+    public static void writeToLocalStorage(String filePath, String content) throws IOException {
         File file = new File(filePath);
         if (!file.exists()) {
             file.createNewFile();

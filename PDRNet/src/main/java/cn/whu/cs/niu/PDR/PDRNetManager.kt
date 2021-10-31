@@ -1,7 +1,6 @@
 package cn.whu.cs.niu.PDR
 
 import android.content.Context
-import com.dadachen.isitp.IMUCollectorZY
 
 class PDRNetManager {
     private var imuCollector: IMUCollectorZY? = null

@@ -48,7 +48,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                 fillData(index++,index2++)
                 Thread.sleep(FREQ_INTERVAL)
             }
-            module = Module.load(Utils.assetFilePath(context, "mobile_model.ptl"))
+            module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "mobile_model.ptl"))
             while (status == Status.Running) {
                 if (index == FRAME_SIZE) {
                     val tData = data.copyOf()
@@ -76,9 +76,9 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 //        change the acc and the gyro to the same axis by using the rot
 //        1.change the rotVector array
 //        val rotChanged = floatArrayOf(rotVector[3], rotVector[0], rotVector[1], rotVector[2])
-        val rotQuaternion=Quaternion(rot3, rot0, rot1, rot2)
-        val gyroQuaternion=Quaternion(0f,gyro0,gyro1,gyro2)
-        val accQuaternion=Quaternion(0f,acc0,acc1,acc2)
+        val rotQuaternion= cn.whu.cs.niu.PDR.Quaternion(rot3, rot0, rot1, rot2)
+        val gyroQuaternion= cn.whu.cs.niu.PDR.Quaternion(0f, gyro0, gyro1, gyro2)
+        val accQuaternion= cn.whu.cs.niu.PDR.Quaternion(0f, acc0, acc1, acc2)
 //        2.use the Quaternion functions
         val gyroChanged=rotQuaternion.times(gyroQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
         val accChanged=rotQuaternion.times(accQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
@@ -113,7 +113,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
 
     val seqList: MutableList<FloatArray> = ArrayList()
     private fun loadDataByCsvFile(){
-        val csvFilePath=Utils.assetFilePath(context, "shouchi_qc1.csv");
+        val csvFilePath= cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "shouchi_qc1.csv");
         println(csvFilePath)
         val file= File(csvFilePath)
         val bufferedReader = BufferedReader(FileReader(file))
@@ -151,7 +151,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                 "mobile_model.ptl"
             }
         }
-        module = Module.load(Utils.assetFilePath(context, modulePath))
+        module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, modulePath))
         println(modulePath)
     }
 
@@ -167,12 +167,12 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             gestureTypeListener(gestureType)
         }
     }
-    private val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture_3.pt"))
+    private val gestureClassifier = GestureClassifier(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "gesture_3.pt"))
 
     fun stop() {
         status = Status.Idle
         if(FilterConstant.RECORD_CSV){
-            Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
+            cn.whu.cs.niu.PDR.Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
         }
         stopSensor()
     }
