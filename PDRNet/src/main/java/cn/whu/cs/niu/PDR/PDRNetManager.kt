@@ -21,43 +21,6 @@ class PDRNetManager {
         DoubleArray(2)
     }
 
-    private fun <T> rotationArrayToNormal(
-        rotArray: Array<T>,
-        normalArray: Array<T>,
-        offset: Int = 0
-    ) {
-        rotArray.copyInto(
-            destination = normalArray,
-            destinationOffset = 0,
-            startIndex = offset,
-            endIndex = rotArray.size
-        )
-        rotArray.copyInto(
-            destination = normalArray,
-            destinationOffset = rotArray.size - offset,
-            startIndex = 0,
-            endIndex = offset
-        )
-    }
-
-    private fun rotationArrayToNormal(
-        rotArray: LongArray,
-        normalArray: LongArray,
-        offset: Int = 0
-    ) {
-        rotArray.copyInto(
-            destination = normalArray,
-            destinationOffset = 0,
-            startIndex = offset,
-            endIndex = rotArray.size
-        )
-        rotArray.copyInto(
-            destination = normalArray,
-            destinationOffset = rotArray.size - offset,
-            startIndex = 0,
-            endIndex = offset
-        )
-    }
     private fun circleArrayToNormal(
         rotArray: Array<DoubleArray>,
         normalArray: Array<DoubleArray>,
@@ -105,48 +68,6 @@ class PDRNetManager {
             completion?.apply {
                 this(outPutTimes, outPutLocations)
             }
-//            if (firstRound) {
-//                if (index < dataSize) {
-//                    times[index] = time
-//                    locations[index] = location.toDoubleArray()
-//                    index++
-//                }
-//                if (index == dataSize) {
-//                    //before do the operations, we need to reverse out data to the normal array
-//                    //tools operations
-//                    rotationArrayToNormal(times, outPutTimes)
-//                    rotationArrayToNormal(locations, outPutLocations)
-//                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
-//                    //locations
-//                    completion?.apply {
-//                        this(outPutTimes, outPutLocations)
-//                    }
-//                    //reset index
-//                    index %= dataSize
-//                    firstRound = false
-//                }
-//            } else {
-//                val rightBar = (preIndex + offset) % dataSize
-//                if (index < rightBar) {
-//                    times[index] = time
-//                    locations[index] = location.toDoubleArray()
-//                    index++
-//                }
-//                if (index == rightBar) {
-//                    rotationArrayToNormal(times, outPutTimes)
-//                    rotationArrayToNormal(locations, outPutLocations)
-//                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
-//                    //locations
-//                    completion?.apply {
-//                        this(outPutTimes, outPutLocations)
-//                    }
-//                    //updating preIndex
-//                    preIndex = index % dataSize
-//                    //index is right
-//                    index %= dataSize
-//
-//                }
-//            }
         }
 
     private fun FloatArray.toDoubleArray(): DoubleArray {
