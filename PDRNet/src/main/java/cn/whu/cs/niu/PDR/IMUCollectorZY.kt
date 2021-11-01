@@ -36,6 +36,7 @@ internal class IMUCollectorZY(
 
     fun start() {
         initSensor()
+        println("sensor init!")
         status = Status.Running
 
         //start thread
@@ -46,7 +47,7 @@ internal class IMUCollectorZY(
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
             }
-            estimate(data.copyOf(), times.copyOf(), offset = -1)
+            estimate(data.copyOf(), times.copyOf(), -1)
             index = 0
             fillData(index++)
             Thread.sleep(FREQ_INTERVAL)
@@ -134,16 +135,16 @@ internal class IMUCollectorZY(
 
     }
 
-    private fun copyData2(tData: Array<FloatArray>, offset: Int = 0): FloatArray {
-        val tempoData = FloatArray(DATA_SIZE)
-        for (sensorIndex in 0 until 6) {
-            var startIndex = FRAME_SIZE * sensorIndex
-            for (index in offset until FRAME_SIZE) {
-                tempoData[startIndex + (index - offset)] = tData[sensorIndex][index]
+    private fun copyData2(tData: Array<FloatArray>, offset: Int=0):FloatArray{
+        val tempoData=FloatArray(DATA_SIZE)
+        for(sensorIndex in 0 until 6){
+            var startIndex= FRAME_SIZE*sensorIndex
+            for(index in offset until FRAME_SIZE){
+                tempoData[startIndex+(index-offset)]=tData[sensorIndex][index]
             }
-            startIndex += (FRAME_SIZE - offset)
-            for (index in 0 until offset) {
-                tempoData[startIndex + index] = tData[sensorIndex][index]
+            startIndex+=(FRAME_SIZE-offset)
+            for(index in 0 until offset){
+                tempoData[startIndex+index]=tData[sensorIndex][index]
             }
         }
         return tempoData
@@ -153,15 +154,17 @@ internal class IMUCollectorZY(
         if (offset == -1) {
             return (tTimes[FRAME_SIZE - 1] - tTimes[0]) / 1000f
         } else {
-            return (tTimes[(offset + STEP) % FRAME_SIZE] - tTimes[offset]) / 1000f
+            return (tTimes[(offset-1 + FRAME_SIZE) % FRAME_SIZE] - tTimes[(offset - STEP + FRAME_SIZE) % FRAME_SIZE]) / 1000f
         }
     }
 
     private fun calculateDistance(res: FloatArray, tTime: Long, movedTime: Float) {
+//        println("net res" + res[0] + ", " + res[1])
         currentLoc[0] += res[0] * movedTime
         currentLoc[1] += res[1] * movedTime
         //do some operations to pass locations and time array to Class Tool.
         //todo
+//        println("net res" + res[0] + ", " + res[1] + " ||| cur pos" + currentLoc[1] / currentLoc[0])
         handler?.apply { this(floatArrayOf(currentLoc[0], currentLoc[1]), tTime, rotData) }
     }
 

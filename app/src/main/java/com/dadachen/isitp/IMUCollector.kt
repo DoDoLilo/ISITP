@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileReader
 import kotlin.concurrent.thread
 
+
 class IMUCollector(private val context: Context, private val modulePartial: (FloatArray) -> Unit) {
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
@@ -62,10 +63,7 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
                     estimate(tData,index,index2)
                 }
                 fillData(index++,index2++)
-//                if(index2==seqList.size) {
-//                    status=Status.Idle
-//                    println("END!")
-//                }
+
                 Thread.sleep(FREQ_INTERVAL) //这里控制了sleep 5ms，即200Hz
             }
         }
@@ -111,69 +109,44 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         }
     }
 
-    val seqList: MutableList<FloatArray> = ArrayList()
-    private fun loadDataByCsvFile(){
-        val csvFilePath= cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "shouchi_qc1.csv");
-        println(csvFilePath)
-        val file= File(csvFilePath)
-        val bufferedReader = BufferedReader(FileReader(file))
-        while(true){
-            val line = bufferedReader.readLine()?:break
-            val list = line.split(",")
-            val temp = FloatArray(10);
-            temp[0]=list[1].toFloat()
-            temp[1]=list[2].toFloat()
-            temp[2]=list[3].toFloat()
-            temp[3]=list[4].toFloat()
-            temp[4]=list[5].toFloat()
-            temp[5]=list[6].toFloat()
-            temp[6]=list[7].toFloat()
-            temp[7]=list[8].toFloat()
-            temp[8]=list[9].toFloat()
-            temp[9]=list[10].toFloat()
-            seqList.add(temp)
-        }
 
-    }
+//    private fun checkGestureAndSwitchModule(tData: Array<FloatArray>) {
+//        checkGesture(tData)
+//        val modulePath = when (gestureType) {
+//            GestureType.Hand -> {
+//                //need to be replaced
+//                "mobile_model.ptl"
+//            }
+//            GestureType.Pocket -> {
+//                "mobile_model.ptl"
+//            }
+//            else -> {
+//                "mobile_model.ptl"
+//            }
+//        }
+//        module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, modulePath))
+//        println(modulePath)
+//    }
 
-
-    private fun checkGestureAndSwitchModule(tData: Array<FloatArray>) {
-        checkGesture(tData)
-        val modulePath = when (gestureType) {
-            GestureType.Hand -> {
-                //need to be replaced
-                "mobile_model.ptl"
-            }
-            GestureType.Pocket -> {
-                "mobile_model.ptl"
-            }
-            else -> {
-                "mobile_model.ptl"
-            }
-        }
-        module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, modulePath))
-        println(modulePath)
-    }
-
-    private fun checkGesture(tData: Array<FloatArray>) {
-        coroutineScope.launch {
-            val gdata = FloatArray(192*6)
-            for (i in 0 until 192){
-                for (j in 0 until 6) {
-                    gdata[i*6+j] = tData[j][i]
-                }
-            }
-            gestureType = gestureClassifier.forward(gdata)
-            gestureTypeListener(gestureType)
-        }
-    }
-    private val gestureClassifier = GestureClassifier(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "gesture_3.pt"))
+//    private fun checkGesture(tData: Array<FloatArray>) {
+//        coroutineScope.launch {
+//            val gdata = FloatArray(192*6)
+//            for (i in 0 until 192){
+//                for (j in 0 until 6) {
+//                    gdata[i*6+j] = tData[j][i]
+//                }
+//            }
+//            gestureType = gestureClassifier.forward(gdata)
+//            gestureTypeListener(gestureType)
+//        }
+//    }
+//    private val gestureClassifier = GestureClassifier(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "gesture_3.pt"))
 
     fun stop() {
         status = Status.Idle
-        if(FilterConstant.RECORD_CSV){
-            cn.whu.cs.niu.PDR.Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
-        }
+//        if(FilterConstant.RECORD_CSV){
+//            cn.whu.cs.niu.PDR.Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
+//        }
         stopSensor()
     }
 

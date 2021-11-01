@@ -2,9 +2,11 @@ package com.dadachen.isitp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import cn.whu.cs.niu.PDR.PDRNetManager
 import com.androidplot.xy.BoundaryMode
 import com.androidplot.xy.LineAndPointFormatter
 import com.androidplot.xy.PointLabelFormatter
+import com.androidplot.xy.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -46,24 +48,33 @@ class MainActivity : AppCompatActivity() {
     } //√
 
     private fun loadInitModuleAndInitIMUCollector() {
-
-        collector = IMUCollector(this) {
-            runOnUiThread {
-                tv_res.text = it.contentToString()
-                drawPlot(it[0],it[1])
+        manager = PDRNetManager()
+        manager.start(this, "mobile_model.ptl"){ times, locations ->
+            runOnUiThread{
+                tv_res.text = times[times.size-1].toString()
+                drawPlotAll(locations)
             }
         }
+
+//        collector = IMUCollector(this) {
+//            runOnUiThread {
+//                tv_res.text = it.contentToString()
+//                drawPlot(it[0],it[1])
+//            }
+//        }
 //        collector.setGestureTypeChangeListener {
 //            runOnUiThread {
 //                tv_gesture.text = it.name
 //            }
 //        }
+//        startRecord()
         plot.clear()
         initDraw()
-        startRecord()
+
     }
 
     private lateinit var collector: IMUCollector //后初始化
+    private lateinit var manager: PDRNetManager
     private fun startRecord() {
         collector.start()
         //Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
@@ -74,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         // Turn the arrays above into XYSeries':
         series = TrackSeries("point")
         val seriesFormat = LineAndPointFormatter()
-        seriesFormat.pointLabelFormatter = PointLabelFormatter()
+//        seriesFormat.pointLabelFormatter = PointLabelFormatter()
         seriesFormat.configure(
             applicationContext,
             R.xml.line_point_formatter_with_labels
@@ -86,8 +97,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun drawPlot(x:Float, y:Float) {
         series.appendData(x, y)
+//        plot.clear()
         plot.redraw()
     }
+
     private fun drawPlotAll(positions:Array<DoubleArray>) {
         series.changeData(positions)
         plot.redraw()
@@ -100,6 +113,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopRecord() {
 //        removeDraw()
-        collector.stop()
+//        collector.stop()
+        manager.stop()
     }
 }

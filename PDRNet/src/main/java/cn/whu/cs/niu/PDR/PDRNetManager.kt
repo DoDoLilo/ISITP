@@ -58,51 +58,95 @@ class PDRNetManager {
             endIndex = offset
         )
     }
+    private fun circleArrayToNormal(
+        rotArray: Array<DoubleArray>,
+        normalArray: Array<DoubleArray>,
+        offset: Int = 0
+    ){
+
+        for (index in offset until dataSize) {
+            normalArray[index - offset][0] = rotArray[index][0]
+            normalArray[index - offset][1] = rotArray[index][1]
+        }
+        for (index in 0 until offset) {
+            normalArray[dataSize - offset + index][0] = rotArray[index][0]
+            normalArray[dataSize - offset + index][1] = rotArray[index][1]
+        }
+
+    }
+    private fun circleArrayToNormal(
+        rotArray: LongArray,
+        normalArray: LongArray,
+        offset: Int = 0
+    ){
+
+        for (index in offset until dataSize) {
+            normalArray[index - offset] = rotArray[index]
+            normalArray[index - offset] = rotArray[index]
+        }
+        for (index in 0 until offset) {
+            normalArray[dataSize - offset + index] = rotArray[index]
+            normalArray[dataSize - offset + index] = rotArray[index]
+        }
+
+    }
 
     private val imuHandler: ((location: FloatArray, time: Long, rot: FloatArray) -> Unit) =
         { location, time, rot ->
-            if (firstRound) {
-                if (index < dataSize) {
-                    times[index] = time
-                    locations[index] = location.toDoubleArray()
-                    index++
-                }
-                if (index == dataSize) {
-                    //before do the operations, we need to reverse out data to the normal array
-                    //tools operations
-                    rotationArrayToNormal(times, outPutTimes)
-                    rotationArrayToNormal(locations, outPutLocations)
-                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
-                    //locations
-                    completion?.apply {
-                        this(outPutTimes, outPutLocations)
-                    }
-                    //reset index
-                    index %= dataSize
-                    firstRound = false
-                }
-            } else {
-                val rightBar = (preIndex + offset) % dataSize
-                if (index < rightBar) {
-                    times[index] = time
-                    locations[index] = location.toDoubleArray()
-                    index++
-                }
-                if (index == rightBar) {
-                    rotationArrayToNormal(times, outPutTimes)
-                    rotationArrayToNormal(locations, outPutLocations)
-                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
-                    //locations
-                    completion?.apply {
-                        this(outPutTimes, outPutLocations)
-                    }
-                    //updating preIndex
-                    preIndex = index % dataSize
-                    //index is right
-                    index %= dataSize
+            times[index] = time
+            locations[index][0] = location[0].toDouble()
+            locations[index][1] = location[1].toDouble()
 
-                }
+            index = (index + 1) % dataSize
+            circleArrayToNormal(times, outPutTimes, index)
+            circleArrayToNormal(locations, outPutLocations, index)
+            CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
+
+            completion?.apply {
+                this(outPutTimes, outPutLocations)
             }
+//            if (firstRound) {
+//                if (index < dataSize) {
+//                    times[index] = time
+//                    locations[index] = location.toDoubleArray()
+//                    index++
+//                }
+//                if (index == dataSize) {
+//                    //before do the operations, we need to reverse out data to the normal array
+//                    //tools operations
+//                    rotationArrayToNormal(times, outPutTimes)
+//                    rotationArrayToNormal(locations, outPutLocations)
+//                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
+//                    //locations
+//                    completion?.apply {
+//                        this(outPutTimes, outPutLocations)
+//                    }
+//                    //reset index
+//                    index %= dataSize
+//                    firstRound = false
+//                }
+//            } else {
+//                val rightBar = (preIndex + offset) % dataSize
+//                if (index < rightBar) {
+//                    times[index] = time
+//                    locations[index] = location.toDoubleArray()
+//                    index++
+//                }
+//                if (index == rightBar) {
+//                    rotationArrayToNormal(times, outPutTimes)
+//                    rotationArrayToNormal(locations, outPutLocations)
+//                    CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
+//                    //locations
+//                    completion?.apply {
+//                        this(outPutTimes, outPutLocations)
+//                    }
+//                    //updating preIndex
+//                    preIndex = index % dataSize
+//                    //index is right
+//                    index %= dataSize
+//
+//                }
+//            }
         }
 
     private fun FloatArray.toDoubleArray(): DoubleArray {
