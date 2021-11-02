@@ -1,6 +1,5 @@
 package com.dadachen.isitp
 
-import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -31,7 +30,7 @@ class ExampleInstrumentedTest {
     fun test_gesture_module(){
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val module = Module.load(Utils.assetFilePath(appContext,"gesture_3.pt"))
+        val module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(appContext,"gesture_3.pt"))
         val reader = File("${appContext.externalCacheDir}/IMU-1608279949401.csv").bufferedReader()
         val content = reader.readLines()
         val data = content.map {

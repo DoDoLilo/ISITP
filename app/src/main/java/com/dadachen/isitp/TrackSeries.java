@@ -3,6 +3,7 @@ package com.dadachen.isitp;
 import com.androidplot.xy.XYSeries;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TrackSeries implements XYSeries {
     private ArrayList<Number> dataX;
@@ -17,6 +18,14 @@ public class TrackSeries implements XYSeries {
     public void appendData(Float x,Float y){
         dataX.add(x);
         dataY.add(y);
+    }
+    public void changeData(double[][] positions){
+        dataX.clear();
+        dataY.clear();
+        for(double[] position : positions){
+            dataX.add((float)position[0]);
+            dataY.add((float)position[1]);
+        }
     }
 
     @Override
