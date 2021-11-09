@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         manager.start(this, "mobile_model.ptl"){ times, locations ->
             runOnUiThread{
                 tv_res.text = times[times.size-1].toString()+"location:${locations[0][0]},${locations[0][1]}"
+
                 drawPlotAll(locations)
             }
         }

@@ -43,4 +43,5 @@ dependencies {
     implementation 'org.pytorch:pytorch_android:1.7.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
 
+
 }
