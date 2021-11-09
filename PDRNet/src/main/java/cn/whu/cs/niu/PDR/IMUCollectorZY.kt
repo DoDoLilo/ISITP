@@ -5,7 +5,11 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.provider.Settings
 import android.util.Log
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -126,13 +130,14 @@ internal class IMUCollectorZY(
 
     private lateinit var module: Module
     private fun estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
-
         val tempoData = copyData2(tData, max(0, offset))
-        val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
-        val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
-        //output res for display on UI
-        calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
 
+        GlobalScope.launch {
+            val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
+            val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+            //output res for display on UI
+            calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
+        }
     }
 
     private fun copyData2(tData: Array<FloatArray>, offset: Int=0):FloatArray{
@@ -163,7 +168,6 @@ internal class IMUCollectorZY(
         currentLoc[0] += res[0] * movedTime
         currentLoc[1] += res[1] * movedTime
         //do some operations to pass locations and time array to Class Tool.
-        //todo
 //        println("net res" + res[0] + ", " + res[1] + " ||| cur pos" + currentLoc[1] / currentLoc[0])
         handler?.apply { this(floatArrayOf(currentLoc[0], currentLoc[1]), tTime, rotData) }
     }
