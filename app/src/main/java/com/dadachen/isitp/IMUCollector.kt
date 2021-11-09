@@ -1,4 +1,4 @@
-package com.dadachen.isitp
+ package com.dadachen.isitp
 
 import android.content.Context
 import android.hardware.Sensor
@@ -12,8 +12,11 @@ import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
-import java.lang.StringBuilder
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
 import kotlin.concurrent.thread
+
 
 class IMUCollector(private val context: Context, private val modulePartial: (FloatArray) -> Unit) {
     private val gyro = FloatArray(3)
@@ -34,87 +37,116 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     }
 
     fun start() {
+//        loadDataByCsvFile()
         initSensor()
         status = Status.Running
         stringBuilder.clear()
-        thread(start = true) {
-            var index = 0
-            while (index < 192) {
-                fillData(index++)
+        //start thread
+        thread(start = true) { //创建一个thread并运行指定代码块，()->Unit
+            var index=0
+            var index2=0
+            while(index<200){
+                fillData(index++,index2++)
                 Thread.sleep(FREQ_INTERVAL)
             }
-            //check gesture and init estimation module by it
-            checkGestureAndSwitchModule(data.copyOf())
-            index = 0
+            module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "mobile_model.ptl"))
             while (status == Status.Running) {
-
                 if (index == FRAME_SIZE) {
                     val tData = data.copyOf()
-                    //check gesture but not changing estimation module
-                    checkGesture(tData)
                     //estimation by using 200 frames IMU-sensor
-                    estimate(tData)
+                    estimate(tData,0,index2)
                     //next step reset offset to zero
                     index = 0
-                } else if (index % STEP == 0) {
+                } else if (index % STEP == 0) { //每10*5ms进行一输出
                     //note index is always more than 1
                     val tData = data.copyOf()
-                    estimate(tData,index)
+                    estimate(tData,index,index2)
                 }
-                fillData(index++)
-                Thread.sleep(FREQ_INTERVAL)
+                fillData(index++,index2++)
+
+                Thread.sleep(FREQ_INTERVAL) //这里控制了sleep 5ms，即200Hz
             }
         }
     }
 
-    private fun fillData(index: Int) {
-        data[0][index] = acc[0]
-        data[1][index] = acc[1]
-        data[2][index] = acc[2]
-        data[3][index] = gyro[0]
-        data[4][index] = gyro[1]
-        data[5][index] = gyro[2]
+    private fun changeTheAxisOfAccAndGyro(acc0:Float,acc1:Float,acc2:Float,gyro0:Float,gyro1: Float,gyro2: Float,
+    rot0:Float,rot1: Float,rot2: Float,rot3: Float): FloatArray {
+//        change the acc and the gyro to the same axis by using the rot
+//        1.change the rotVector array
+//        val rotChanged = floatArrayOf(rotVector[3], rotVector[0], rotVector[1], rotVector[2])
+        val rotQuaternion= cn.whu.cs.niu.PDR.Quaternion(rot3, rot0, rot1, rot2)
+        val gyroQuaternion= cn.whu.cs.niu.PDR.Quaternion(0f, gyro0, gyro1, gyro2)
+        val accQuaternion= cn.whu.cs.niu.PDR.Quaternion(0f, acc0, acc1, acc2)
+//        2.use the Quaternion functions
+        val gyroChanged=rotQuaternion.times(gyroQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
+        val accChanged=rotQuaternion.times(accQuaternion).times(rotQuaternion.conjugate()).toFloatArray()
+//        3.past the values to acc and gyro
+        val gyroAccChanged= floatArrayOf(gyroChanged[1],gyroChanged[2],gyroChanged[3],accChanged[1],accChanged[2],accChanged[3])
+        return gyroAccChanged
+    }
+
+    private fun fillData(index: Int, index2: Int=0) {
+//        acc gyro rot
+//        val gyroAccChanged=changeTheAxisOfAccAndGyro(
+//            seqList[index2][0],seqList[index2][1],seqList[index2][2], //acc
+//            seqList[index2][3],seqList[index2][4],seqList[index2][5],  //gyro
+//            seqList[index2][6],seqList[index2][7],seqList[index2][8],seqList[index2][9]) //rot
+        val gyroAccChanged=changeTheAxisOfAccAndGyro(
+            acc[0],acc[1],acc[2], //acc
+            gyro[0],gyro[1],gyro[2],  //gyro
+            rotVector[0],rotVector[1],rotVector[2],rotVector[3]) //rot
+//        val gyroAccChanged=changeTheAxisOfAccAndGyro(acc[0],acc[1],acc[2],gyro[0],gyro[1],gyro[2],
+//        rotVector[0],rotVector[1],rotVector[2],rotVector[3])
+        //the module input [0-2]:gyro  [3-5]:acc
+        data[0][index] = gyroAccChanged[0]
+        data[1][index] = gyroAccChanged[1]
+        data[2][index] = gyroAccChanged[2]
+        data[3][index] = gyroAccChanged[3]
+        data[4][index] = gyroAccChanged[4]
+        data[5][index] = gyroAccChanged[5]
         if (FilterConstant.RECORD_CSV){
-            stringBuilder.append("${acc[0]}, ${acc[1]}, ${acc[2]}, ${gyro[0]}, ${gyro[1]}, ${gyro[2]}\n")
+            stringBuilder.append("${data[0][index]}, ${data[1][index]}, ${data[2][index]}, ${data[3][index]}, ${data[4][index]}, ${data[5][index]}\n")
         }
     }
 
-    private fun checkGestureAndSwitchModule(tData: Array<FloatArray>) {
-        checkGesture(tData)
-        val modulePath = when (gestureType) {
-            GestureType.Hand -> {
-                //need to be replaced
-                "resnet.pt"
-            }
-            GestureType.Pocket -> {
-                "resnet.pt"
-            }
-            else -> {
-                "resnet.pt"
-            }
-        }
-        module = Module.load(Utils.assetFilePath(context, modulePath))
-    }
 
-    private fun checkGesture(tData: Array<FloatArray>) {
-        coroutineScope.launch {
-            val gdata = FloatArray(192*6)
-            for (i in 0 until 192){
-                for (j in 0 until 6) {
-                    gdata[i*6+j] = tData[j][i]
-                }
-            }
-            gestureType = gestureClassifier.forward(gdata)
-            gestureTypeListener(gestureType)
-        }
-    }
-    private val gestureClassifier = GestureClassifier(Utils.assetFilePath(context, "gesture_3.pt"))
+//    private fun checkGestureAndSwitchModule(tData: Array<FloatArray>) {
+//        checkGesture(tData)
+//        val modulePath = when (gestureType) {
+//            GestureType.Hand -> {
+//                //need to be replaced
+//                "mobile_model.ptl"
+//            }
+//            GestureType.Pocket -> {
+//                "mobile_model.ptl"
+//            }
+//            else -> {
+//                "mobile_model.ptl"
+//            }
+//        }
+//        module = Module.load(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, modulePath))
+//        println(modulePath)
+//    }
+
+//    private fun checkGesture(tData: Array<FloatArray>) {
+//        coroutineScope.launch {
+//            val gdata = FloatArray(192*6)
+//            for (i in 0 until 192){
+//                for (j in 0 until 6) {
+//                    gdata[i*6+j] = tData[j][i]
+//                }
+//            }
+//            gestureType = gestureClassifier.forward(gdata)
+//            gestureTypeListener(gestureType)
+//        }
+//    }
+//    private val gestureClassifier = GestureClassifier(cn.whu.cs.niu.PDR.Utils.assetFilePath(context, "gesture_3.pt"))
 
     fun stop() {
         status = Status.Idle
-        if(FilterConstant.RECORD_CSV){
-            Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
-        }
+//        if(FilterConstant.RECORD_CSV){
+//            cn.whu.cs.niu.PDR.Utils.writeToLocalStorage("${context.externalCacheDir}/IMU-${System.currentTimeMillis()}.csv", stringBuilder.toString())
+//        }
         stopSensor()
     }
 
@@ -123,24 +155,23 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
     }
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private lateinit var module: Module
-    private fun estimate(tData: Array<FloatArray>, offset: Int = 0) {
+    private fun  estimate(tData: Array<FloatArray>, offset: Int = 0, index2: Int=0) {
         //low-pass filter need parameters from MatLab
         //note: copy data in the main thread is so important,
         //please do not copy data in the coroutineScope
-        coroutineScope.launch {
-            val tempoData = copyData(tData,offset)
-            val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
-            val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
-            //output res for display on UI
-            calculateDistance(res)
-            modulePartial(currentLoc)
-
-        }
+//        coroutineScope.launch {
+        val tempoData = copyData2(tData,offset)
+        val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
+        val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+        //output res for display on UI
+        calculateDistance(res)
+        modulePartial(currentLoc)
+//        }
     }
     private val stringBuilder = StringBuilder()
     private fun copyData(tData:Array<FloatArray>, offset:Int=0):FloatArray{
-        val tempoData = FloatArray(DATA_SIZE)
-        for (index in offset until FRAME_SIZE) {
+        val tempoData = FloatArray(DATA_SIZE)  //1200
+        for (index in offset until FRAME_SIZE) { //the last data
             //low-pass filters are muted.
 //                filters[index].filter(floatArray).copyInto(tempoData, index * FRAME_SIZE)
             for (i in 0 until 6){
@@ -148,9 +179,24 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
             }
         }
         val tOffset = FRAME_SIZE-offset
-        for (index in 0 until offset) {
+        for (index in 0 until offset) {  //the new data
             for (i in 0 until 6) {
-                tempoData[tOffset+index*6+i] = tData[i][index]
+                tempoData[(tOffset+index)*6+i] = tData[i][index]
+            }
+        }
+        return tempoData
+    }
+
+    private fun copyData2(tData: Array<FloatArray>, offset: Int=0):FloatArray{
+        val tempoData=FloatArray(DATA_SIZE)
+        for(sensorIndex in 0 until 6){
+            var startIndex= FRAME_SIZE*sensorIndex
+            for(index in offset until FRAME_SIZE){
+                tempoData[startIndex+(index-offset)]=tData[sensorIndex][index]
+            }
+            startIndex+=(FRAME_SIZE-offset)
+            for(index in 0 until offset){
+                tempoData[startIndex+index]=tData[sensorIndex][index]
             }
         }
         return tempoData
@@ -232,6 +278,6 @@ class IMUCollector(private val context: Context, private val modulePartial: (Flo
         const val DATA_SIZE = 6 * 200
         const val FREQ_INTERVAL = 5L
         const val STEP = 10
-        const val V_INTERVAL = 1f / STEP
+        const val V_INTERVAL = 1f / (FRAME_SIZE/ STEP)
     }
 }
