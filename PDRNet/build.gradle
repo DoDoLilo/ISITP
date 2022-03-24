@@ -14,10 +14,20 @@ android {
         consumerProguardFiles "consumer-rules.pro"
     }
 
+    signingConfigs {
+        playstore {
+            keyAlias 'KEY_ALIS_NAME_HERE'
+            storeFile file('/PATH_TO_KEYSTORE_FILE_HERE/app.keystore')
+            keyPassword 'KEY_PASSWORD_HERE'
+            storePassword 'STORE_PASSWORD_HERE'
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            debuggable false
         }
     }
     compileOptions {
