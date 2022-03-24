@@ -16,10 +16,10 @@ android {
 
     signingConfigs {
         playstore {
-            keyAlias 'KEY_ALIS_NAME_HERE'
-            storeFile file('/PATH_TO_KEYSTORE_FILE_HERE/app.keystore')
-            keyPassword 'KEY_PASSWORD_HERE'
-            storePassword 'STORE_PASSWORD_HERE'
+            keyAlias 'key0'
+            storeFile file('C:\\Users\\qiuchao.DESKTOP-MEE38AN\\qiuchao2.jks')
+            keyPassword '19980429'
+            storePassword '19980429'
         }
     }
 
@@ -28,6 +28,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             debuggable false
+            signingConfig signingConfigs.playstore
         }
     }
     compileOptions {
