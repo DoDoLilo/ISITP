@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import kotlinx.coroutines.GlobalScope
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
+import java.lang.StringBuilder
 import kotlin.concurrent.thread
 import kotlin.math.max
 
@@ -19,6 +21,7 @@ internal class IMUCollectorZY(
     private val context: Context,
     private val modulePath: String = "mobile_model.ptl"
 ) {
+    private val stringBuilder = StringBuilder()
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -38,6 +41,7 @@ internal class IMUCollectorZY(
     }
 
     fun start() {
+        stringBuilder.clear()
         initSensor()
         println("sensor init!")
         status = Status.Running
@@ -46,6 +50,7 @@ internal class IMUCollectorZY(
         thread(start = true) { //创建一个thread并运行指定代码块，()->Unit
             module = Module.load(Utils.assetFilePath(context, modulePath))
             var index = 0
+            estimate(data.copyOf(), times.copyOf(), -1)
             while (index < FRAME_SIZE) {
                 fillData(index++)
                 Thread.sleep(FREQ_INTERVAL)
@@ -119,23 +124,28 @@ internal class IMUCollectorZY(
         data[3][index] = gyroAccChanged[3]
         data[4][index] = gyroAccChanged[4]
         data[5][index] = gyroAccChanged[5]
+        val d = "${times[index]}, ${gyroAccChanged[0]}, ${gyroAccChanged[1]}, ${gyroAccChanged[2]}, " +
+                "${gyroAccChanged[3]}, ${gyroAccChanged[4]}, ${gyroAccChanged[5]}"
+        stringBuilder.appendLine(d)
     }
 
-    fun stop() {
+    fun stop(filePath:String) {
         status = Status.Idle
         stopSensor()
+        writeToLocalStorage(filePath, stringBuilder.toString())
     }
 
 
     private lateinit var module: Module
     private fun estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
-        val tempoData = copyData2(tData, max(0, offset))
-
         GlobalScope.launch {
+//            println("index:"+offset)
+            val tempoData = copyData2(tData, max(0, offset))
             val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
             val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
             //output res for display on UI
             calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
+//            println("index:"+offset)
         }
     }
 
@@ -158,12 +168,13 @@ internal class IMUCollectorZY(
         if (offset == -1) {
             return (tTimes[FRAME_SIZE - 1] - tTimes[0]) / 1000f
         } else {
-            return (tTimes[(offset-1 + FRAME_SIZE) % FRAME_SIZE] - tTimes[(offset - STEP + FRAME_SIZE) % FRAME_SIZE]) / 1000f
+            return (tTimes[(offset-1 + FRAME_SIZE) % FRAME_SIZE] - tTimes[(offset - STEP - 1 + FRAME_SIZE) % FRAME_SIZE]) / 1000f
         }
     }
 
     private fun calculateDistance(res: FloatArray, tTime: Long, movedTime: Float) {
 //        println("net res" + res[0] + ", " + res[1])
+//        println("moved time:" + movedTime)
         currentLoc[0] += res[0] * movedTime
         currentLoc[1] += res[1] * movedTime
         //do some operations to pass locations and time array to Class Tool.

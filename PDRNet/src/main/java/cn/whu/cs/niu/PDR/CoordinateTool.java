@@ -5,11 +5,13 @@ public class CoordinateTool {
 
     static public void updateCoordinate(double[] grv, double[][] positions) {
         double azimuth = grvToAzimuth(grv);
-        nrotateFromStart(azimuth, positions);
+        nrotateFromStart(-azimuth, positions);
         translationPosition(positions);
     }
 
-    static private double grvToAzimuth(double[] grv) {
+    static public double grvToAzimuth(double[] grv) {
+//        角度顺时针减，逆时针加
+
         double x = grv[0];
         double y = grv[1];
         double z = grv[2];

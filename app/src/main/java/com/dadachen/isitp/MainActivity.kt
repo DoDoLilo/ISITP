@@ -2,6 +2,7 @@ package com.dadachen.isitp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import cn.whu.cs.niu.PDR.CoordinateTool
 import cn.whu.cs.niu.PDR.PDRNetManager
 import com.androidplot.xy.BoundaryMode
 import com.androidplot.xy.LineAndPointFormatter
@@ -36,7 +37,7 @@ class MainActivity : AppCompatActivity() {
                 bt_load_module.text = getText(R.string.stop)
                 sw_save_csv.isEnabled = false
             }else{
-                stopRecord()
+                stopRecord("${externalCacheDir}/qiutest-${System.currentTimeMillis()}.csv")
                 sw_save_csv.isEnabled = true
                 isLoading = false
                 bt_load_module.text = getText(R.string.load_module)
@@ -49,10 +50,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitModuleAndInitIMUCollector() {
         manager = PDRNetManager()
-        manager.start(this, "mobile_model.ptl"){ times, locations ->
+        manager.start(this, "mobile_model.ptl"){ times, locations, grv ->
             runOnUiThread{
-                tv_res.text = times[times.size-1].toString()+"location:${locations[0][0]},${locations[0][1]}"
-                drawPlotAll(locations)
+//                CoordinateTool.updateCoordinate(grv, locations)
+                val azimuth = -CoordinateTool.grvToAzimuth(grv)*180/3.1415926
+                val location_x = locations[399][0].toFloat()
+                val location_y = locations[399][1].toFloat()
+                tv_res.text = location_x.toString() + ", " + location_y.toString()+", "+azimuth.toString()
+//                println(locations[399][0].toString() + ", " + locations[399][1].toString())
+//                drawPlotAll(locations)
+                drawPlot(location_x, location_y)
             }
         }
 
@@ -91,8 +98,8 @@ class MainActivity : AppCompatActivity() {
             R.xml.line_point_formatter_with_labels
         )
         plot.addSeries(series, seriesFormat)
-        plot.setDomainBoundaries(-15,15,BoundaryMode.FIXED)
-        plot.setRangeBoundaries(-20,20,BoundaryMode.FIXED)
+        plot.setDomainBoundaries(-50,50,BoundaryMode.FIXED)
+        plot.setRangeBoundaries(-50,50,BoundaryMode.FIXED)
     }
 
     private fun drawPlot(x:Float, y:Float) {
@@ -111,9 +118,9 @@ class MainActivity : AppCompatActivity() {
 //        plot.redraw()
     }
 
-    private fun stopRecord() {
+    private fun stopRecord(filePath:String) {
 //        removeDraw()
 //        collector.stop()
-        manager.stop()
+        manager.stop(filePath)
     }
 }
