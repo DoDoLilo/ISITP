@@ -11,13 +11,13 @@ android {
         targetSdkVersion 30
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
+
     }
 
     signingConfigs {
         playstore {
             keyAlias 'key0'
-            storeFile file('C:\\Users\\qiuchao.DESKTOP-MEE38AN\\qiuchao2.jks')
+            storeFile file('C:\\Users\\overl\\Documents\\qiuchao2.jks')
             keyPassword '19980429'
             storePassword '19980429'
         }
@@ -26,7 +26,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles 'proguard-rules.pro'
             debuggable false
             signingConfig signingConfigs.playstore
         }
