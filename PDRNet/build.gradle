@@ -7,20 +7,28 @@ android {
     compileSdkVersion 30
 
     defaultConfig {
-        minSdkVersion 23
+        minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
+
+    }
+
+    signingConfigs {
+        playstore {
+            keyAlias 'key0'
+            storeFile file('C:\\Users\\overl\\Documents\\qiuchao2.jks')
+            keyPassword '19980429'
+            storePassword '19980429'
+        }
     }
 
     buildTypes {
         release {
-            debuggable false
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles 'proguard-rules.pro'
+            debuggable false
+            signingConfig signingConfigs.playstore
         }
     }
     compileOptions {
@@ -42,6 +50,5 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation 'org.pytorch:pytorch_android:1.7.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
-
 
 }

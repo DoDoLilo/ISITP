@@ -6,7 +6,7 @@ class PDRNetManager {
     private var imuCollector: IMUCollectorZY? = null
 
 
-    val dataSize = IMUCollectorZY.FRAME_SIZE / IMUCollectorZY.STEP * IMUCollectorZY.SECOND
+    private val dataSize = IMUCollectorZY.FRAME_SIZE / IMUCollectorZY.STEP * IMUCollectorZY.SECOND
     private val times: LongArray = LongArray(dataSize)
     private val locations = Array(dataSize) {
         DoubleArray(2)
@@ -61,10 +61,10 @@ class PDRNetManager {
             index = (index + 1) % dataSize
             circleArrayToNormal(times, outPutTimes, index)
             circleArrayToNormal(locations, outPutLocations, index)
-            CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
+//            CoordinateTool.updateCoordinate(rot.toDoubleArray(), outPutLocations)
 
             completion?.apply {
-                this(outPutTimes, outPutLocations)
+                this(outPutTimes, outPutLocations, rot.toDoubleArray())
             }
         }
 
@@ -76,7 +76,7 @@ class PDRNetManager {
         return res
     }
 
-    private var completion: ((times: LongArray, Array<DoubleArray>) -> Unit)? = null
+    private var completion: ((times: LongArray, locations: Array<DoubleArray>, grv: DoubleArray) -> Unit)? = null
 
 
     /**
@@ -93,7 +93,7 @@ class PDRNetManager {
     fun start(
         context: Context,
         module: String = "mobile_model.ptl",
-        handler: (times: LongArray, locations: Array<DoubleArray>) -> Unit
+        handler: (times: LongArray, locations: Array<DoubleArray>, grv: DoubleArray) -> Unit
     ) {
         imuCollector = null
         imuCollector = IMUCollectorZY(context = context, modulePath = module)
@@ -110,7 +110,7 @@ class PDRNetManager {
      * 停止采集PDR
      *
      */
-    fun stop() {
-        imuCollector?.stop()
+    fun stop(filePath:String) {
+        imuCollector?.stop(filePath)
     }
 }

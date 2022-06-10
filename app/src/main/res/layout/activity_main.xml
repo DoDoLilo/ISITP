@@ -32,7 +32,7 @@
         android:id="@+id/plot"
         style="@style/APDefacto.Dark"
         android:layout_width="376dp"
-        android:layout_height="507dp"
+        android:layout_height="410dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.542"
