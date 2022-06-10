@@ -13,7 +13,6 @@ class PDRNetManager {
     }
     private var index = 0
     private var firstRound = true
-
     private var outPutTimes = LongArray(dataSize)
     private var outPutLocations = Array(dataSize) {
         DoubleArray(2)
