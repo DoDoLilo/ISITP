@@ -6,7 +6,7 @@ class PDRNetManager {
     private var imuCollector: IMUCollectorZY? = null
 
 
-    val dataSize = IMUCollectorZY.FRAME_SIZE / IMUCollectorZY.STEP * IMUCollectorZY.SECOND
+    private val dataSize = IMUCollectorZY.FRAME_SIZE / IMUCollectorZY.STEP * IMUCollectorZY.SECOND
     private val times: LongArray = LongArray(dataSize)
     private val locations = Array(dataSize) {
         DoubleArray(2)

@@ -1,6 +1,6 @@
 package cn.whu.cs.niu.PDR;
 
-public class Quaternion {
+class Quaternion {
     private float x0;
     private float x1;
     private float x2;

@@ -18,7 +18,6 @@ internal class IMUCollectorZY(
     private val context: Context,
     private val modulePath: String = "mobile_model.ptl"
 ) {
-    private val stringBuilder = StringBuilder()
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -38,7 +37,6 @@ internal class IMUCollectorZY(
     }
 
     fun start() {
-        stringBuilder.clear()
         initSensor()
         println("sensor init!")
         status = Status.Running
@@ -121,15 +119,11 @@ internal class IMUCollectorZY(
         data[3][index] = gyroAccChanged[3]
         data[4][index] = gyroAccChanged[4]
         data[5][index] = gyroAccChanged[5]
-        val d = "${times[index]}, ${gyroAccChanged[0]}, ${gyroAccChanged[1]}, ${gyroAccChanged[2]}, " +
-                "${gyroAccChanged[3]}, ${gyroAccChanged[4]}, ${gyroAccChanged[5]}"
-        stringBuilder.appendLine(d)
     }
 
     fun stop(filePath:String) {
         status = Status.Idle
         stopSensor()
-        writeToLocalStorage(filePath, stringBuilder.toString())
     }
 
 
@@ -242,13 +236,12 @@ internal class IMUCollectorZY(
         sensorManager.unregisterListener(rotl)
     }
 
-    internal
-    companion object {
-        const val FRAME_SIZE = 200
-        const val DATA_SIZE = 6 * 200
-        const val FREQ_INTERVAL = 5L
-        const val STEP = 10
-        const val V_INTERVAL = 1f / (FRAME_SIZE / STEP)
-        const val SECOND = 20
+    internal companion object {
+        internal const val FRAME_SIZE = 200
+        internal const val DATA_SIZE = 6 * 200
+        internal const val FREQ_INTERVAL = 5L
+        internal const val STEP = 10
+        internal const val V_INTERVAL = 1f / (FRAME_SIZE / STEP)
+        internal const val SECOND = 20
     }
 }
