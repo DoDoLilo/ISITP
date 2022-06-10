@@ -21,7 +21,6 @@ internal class IMUCollectorZY(
     private val context: Context,
     private val modulePath: String = "mobile_model.ptl"
 ) {
-    private val stringBuilder = StringBuilder()
     private val gyro = FloatArray(3)
     private val acc = FloatArray(3)
     private val rotVector = FloatArray(4)
@@ -41,7 +40,6 @@ internal class IMUCollectorZY(
     }
 
     fun start() {
-        stringBuilder.clear()
         initSensor()
         println("sensor init!")
         status = Status.Running
@@ -124,15 +122,11 @@ internal class IMUCollectorZY(
         data[3][index] = gyroAccChanged[3]
         data[4][index] = gyroAccChanged[4]
         data[5][index] = gyroAccChanged[5]
-        val d = "${times[index]}, ${gyroAccChanged[0]}, ${gyroAccChanged[1]}, ${gyroAccChanged[2]}, " +
-                "${gyroAccChanged[3]}, ${gyroAccChanged[4]}, ${gyroAccChanged[5]}"
-        stringBuilder.appendLine(d)
     }
 
     fun stop(filePath:String) {
         status = Status.Idle
         stopSensor()
-        writeToLocalStorage(filePath, stringBuilder.toString())
     }
 
 

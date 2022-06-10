@@ -80,12 +80,12 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private lateinit var collector: IMUCollector //后初始化
+//    private lateinit var collector: IMUCollector //后初始化
     private lateinit var manager: PDRNetManager
-    private fun startRecord() {
-        collector.start()
-        //Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
-    }
+//    private fun startRecord() {
+//        collector.start()
+//        //Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
+//    }
     private lateinit var series:TrackSeries
 
     private fun initDraw(){
