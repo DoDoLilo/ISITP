@@ -5,15 +5,12 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
-import java.lang.StringBuilder
 import kotlin.concurrent.thread
 import kotlin.math.max
 
@@ -245,6 +242,7 @@ internal class IMUCollectorZY(
         sensorManager.unregisterListener(rotl)
     }
 
+    internal
     companion object {
         const val FRAME_SIZE = 200
         const val DATA_SIZE = 6 * 200
