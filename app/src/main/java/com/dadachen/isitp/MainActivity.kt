@@ -6,8 +6,6 @@ import cn.whu.cs.niu.PDR.CoordinateTool
 import cn.whu.cs.niu.PDR.PDRNetManager
 import com.androidplot.xy.BoundaryMode
 import com.androidplot.xy.LineAndPointFormatter
-import com.androidplot.xy.PointLabelFormatter
-import com.androidplot.xy.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -28,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initView()
     }
+
     private var isLoading = false
     private fun initView() {//俩功能按钮的监听
         bt_load_module.setOnClickListener {
@@ -36,7 +35,7 @@ class MainActivity : AppCompatActivity() {
                 isLoading = true
                 bt_load_module.text = getText(R.string.stop)
                 sw_save_csv.isEnabled = false
-            }else{
+            } else {
                 stopRecord("${externalCacheDir}/qiutest-${System.currentTimeMillis()}.csv")
                 sw_save_csv.isEnabled = true
                 isLoading = false
@@ -50,13 +49,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitModuleAndInitIMUCollector() {
         manager = PDRNetManager()
-        manager.start(this, "mobile_model.ptl"){ times, locations, grv ->
-            runOnUiThread{
+        manager.start(this, "bilstm1.ptl") { times, locations, grv ->
+            runOnUiThread {
 //                CoordinateTool.updateCoordinate(grv, locations)
-                val azimuth = -CoordinateTool.grvToAzimuth(grv)*180/3.1415926
-                val location_x = locations[399][0].toFloat()
-                val location_y = locations[399][1].toFloat()
-                tv_res.text = location_x.toString() + ", " + location_y.toString()+", "+azimuth.toString()
+                val azimuth = -CoordinateTool.grvToAzimuth(grv) * 180 / 3.1415926
+//                val location_x = locations[399][0].toFloat()
+//                val location_y = locations[399][1].toFloat()
+                val location_x = locations[99][0].toFloat()
+                val location_y = locations[99][1].toFloat()
+                tv_res.text =
+                    location_x.toString() + ", " + location_y.toString() + ", " + azimuth.toString()
 //                println(locations[399][0].toString() + ", " + locations[399][1].toString())
 //                drawPlotAll(locations)
                 drawPlot(location_x, location_y)
@@ -80,15 +82,16 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-//    private lateinit var collector: IMUCollector //后初始化
+    //    private lateinit var collector: IMUCollector //后初始化
     private lateinit var manager: PDRNetManager
-//    private fun startRecord() {
+
+    //    private fun startRecord() {
 //        collector.start()
 //        //Toast.makeText(this, "load module success", Toast.LENGTH_SHORT).show()
 //    }
-    private lateinit var series:TrackSeries
+    private lateinit var series: TrackSeries
 
-    private fun initDraw(){
+    private fun initDraw() {
         // Turn the arrays above into XYSeries':
         series = TrackSeries("point")
         val seriesFormat = LineAndPointFormatter()
@@ -98,17 +101,17 @@ class MainActivity : AppCompatActivity() {
             R.xml.line_point_formatter_with_labels
         )
         plot.addSeries(series, seriesFormat)
-        plot.setDomainBoundaries(-50,50,BoundaryMode.FIXED)
-        plot.setRangeBoundaries(-50,50,BoundaryMode.FIXED)
+        plot.setDomainBoundaries(-50, 50, BoundaryMode.FIXED)
+        plot.setRangeBoundaries(-50, 50, BoundaryMode.FIXED)
     }
 
-    private fun drawPlot(x:Float, y:Float) {
+    private fun drawPlot(x: Float, y: Float) {
         series.appendData(x, y)
 //        plot.clear()
         plot.redraw()
     }
 
-    private fun drawPlotAll(positions:Array<DoubleArray>) {
+    private fun drawPlotAll(positions: Array<DoubleArray>) {
         series.changeData(positions)
         plot.redraw()
     }
@@ -118,7 +121,7 @@ class MainActivity : AppCompatActivity() {
 //        plot.redraw()
     }
 
-    private fun stopRecord(filePath:String) {
+    private fun stopRecord(filePath: String) {
 //        removeDraw()
 //        collector.stop()
         manager.stop(filePath)

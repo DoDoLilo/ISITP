@@ -79,8 +79,8 @@ class PDRNetManager {
 
 
     /**
-     * 开始采集PDR，使用回调函数获取时间戳和位置数据
-     * 回调函数中包含两个形参，分别为时间戳数组和坐标数组。
+     * 开始采集PDR，使用回调函数获取时间戳、位置数据、
+     * 回调函数中包含两个形参，分别为时间戳数组、坐标数组、。
      * 时间戳数组长度为400，由System.currentTimeMillis()获取。
      * 位置数据为400×2的double类型数据。以最后一个位置为原点，以最后一个位置的IMU的航向角为X轴的水平坐标系。
      * 该模块调用了TYPE_GAME_ROTATION_VECTOR、TYPE_ACCELEROMETER、TYPE_GYROSCOPE_UNCALIBRATED三种传感器。

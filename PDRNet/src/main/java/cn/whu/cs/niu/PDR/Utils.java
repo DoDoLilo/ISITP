@@ -17,12 +17,14 @@ public class Utils {
      * @return absolute file path
      */
     public static String assetFilePath(Context context, String assetName) throws IOException {
+        //如果mobile_model.ptl文件已经在“应用的内部存储空间context.getFilesDir()”中
         File file = new File(context.getFilesDir(), assetName);
 
         if (file.exists() && file.length() > 0) {
-            return file.getAbsolutePath();
+            return file.getAbsolutePath();  //则直接返回mobile_model.ptl文件的路径
         }
 
+        //如果不存在，则将assets目录下的mobile_model.ptl文件拷贝到“context.getFilesDir()/mobile_model.ptl”
         try (InputStream is = context.getAssets().open(assetName)) {
             try (OutputStream os = new FileOutputStream(file)) {
                 byte[] buffer = new byte[4 * 1024];
@@ -32,7 +34,7 @@ public class Utils {
                 }
                 os.flush();
             }
-            return file.getAbsolutePath();
+            return file.getAbsolutePath();  //返回拷贝后的文件
         }
     }
 
