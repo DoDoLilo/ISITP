@@ -79,6 +79,7 @@ internal class IMUCollectorZY(
         }
     }
 
+    //return gyro + acc
     private fun changeTheAxisOfAccAndGyro(
         acc0: Float, acc1: Float, acc2: Float, gyro0: Float, gyro1: Float, gyro2: Float,
         rot0: Float, rot1: Float, rot2: Float, rot3: Float
@@ -138,9 +139,6 @@ internal class IMUCollectorZY(
     //tData\tTimes[0..offset-1]是新数据，tData\tTimes[offset..len-1]是旧数据
     private fun estimate(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
         GlobalScope.launch {
-//            val tempoData = copyData2(tData, max(0, offset))
-//            val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
-
             val tempoData = copyData(tData, max(0, offset))
             val inputTensor = Tensor.fromBlob(tempoData, longArrayOf(1, 200, 6))
             val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
@@ -154,12 +152,14 @@ internal class IMUCollectorZY(
             val rowNum = outputShape[1].toInt()
             val colNum = outputShape[2].toInt()
             //获取 整个窗口一半帧 的Vx Vy 之和
-            var numToMean =  rowNum / 2
+//            var numToMean =  rowNum / 2
+//            var numToMean = STEP
+            var numToMean = rowNum
             if (offset == -1) {
                 //-1表示是第一个窗口，则取整个窗口
                 numToMean = rowNum
             }
-            for (i in 0 until numToMean) {
+            for (i in (rowNum - numToMean) until rowNum) {
                 for (j in 0 until colNum) {
                     //Vx Vy
                     val index = i * colNum + j
@@ -172,6 +172,19 @@ internal class IMUCollectorZY(
 
             //output res for display on UI
             calculateDistance(resVxy, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
+        }
+    }
+
+    //使用残差pdt模型时，输入是6*200，输出是1*2
+    private fun estimate2(tData: Array<FloatArray>, tTimes: LongArray, offset: Int = 0) {
+        GlobalScope.launch {
+//            println("index:"+offset)
+            val tempoData = copyData2(tData, max(0, offset))
+            val tensor = Tensor.fromBlob(tempoData, longArrayOf(1, 6, 200))
+            val res = module.forward(IValue.from(tensor)).toTensor().dataAsFloatArray
+            //output res for display on UI
+            calculateDistance(res, tTimes[max(0, offset)], getMovedTime(tTimes, offset))
+//            println("index:"+offset)
         }
     }
 

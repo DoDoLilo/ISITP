@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadInitModuleAndInitIMUCollector() {
         manager = PDRNetManager()
-        manager.start(this, "bilstm1.ptl") { times, locations, grv ->
+        manager.start(this, "gru1.ptl") { times, locations, grv ->
             runOnUiThread {
 //                CoordinateTool.updateCoordinate(grv, locations)
                 val azimuth = -CoordinateTool.grvToAzimuth(grv) * 180 / 3.1415926
